@@ -1,0 +1,294 @@
+// Sistem Pelaporan Kehilangan dan Penemuan Barang
+// SMK Forward Nusantara
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===== ENUMS =====
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Jabatan {
+  SISWA
+  GURU
+  SECURITY
+  FRONT_OFFICE
+  GURU_PIKET
+}
+
+enum AccountStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+enum EnrollmentType {
+  SISWA
+  GURU
+}
+
+enum EnrollmentCodeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ReportType {
+  LOST
+  FOUND
+}
+
+enum ReportStatus {
+  PENDING
+  VERIFIED
+  CLAIMED
+  REJECTED
+  EXPIRED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ClaimType {
+  ONLINE
+  OFFLINE
+}
+
+enum PasswordResetStatus {
+  PENDING
+  PROCESSED
+}
+
+// ===== MODELS =====
+
+// Profile (extends Supabase auth.users)
+// id HARUS sama dengan auth.users.id dari Supabase
+model Profile {
+  id        String        @id @db.Uuid
+  email     String        @unique
+  name      String
+  role      Role          @default(USER)
+  jabatan   Jabatan
+  status    AccountStatus @default(ACTIVE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  // Relasi sebagai pemilik data
+  reports               Report[]
+  claims                Claim[]
+  comments              Comment[]
+  notifications         Notification[]
+  passwordResetRequests PasswordResetRequest[] @relation("PasswordRequester")
+  auditLogs             AuditLog[]
+
+  // Relasi sebagai admin / pembuat
+  enrollmentCodesCreated  EnrollmentCode[]       @relation("EnrollmentCodeCreator")
+  announcementsCreated    Announcement[]         @relation("AnnouncementCreator")
+  passwordResetsProcessed PasswordResetRequest[] @relation("PasswordResetProcessor")
+
+  @@map("profiles")
+}
+
+// Enrollment Code
+model EnrollmentCode {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code          String               @unique
+  type          EnrollmentType
+  status        EnrollmentCodeStatus @default(ACTIVE)
+  usageCount    Int                  @default(0) @map("usage_count")
+  createdBy     String               @map("created_by") @db.Uuid
+  expiredAt     DateTime?            @map("expired_at")
+  deactivatedAt DateTime?            @map("deactivated_at")
+  createdAt     DateTime             @default(now()) @map("created_at")
+
+  creator Profile @relation("EnrollmentCodeCreator", fields: [createdBy], references: [id])
+
+  @@map("enrollment_codes")
+}
+
+// Kategori Barang
+model Category {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @unique
+  imageUrl  String   @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reports Report[]
+
+  @@map("categories")
+}
+
+// Laporan (Kehilangan & Penemuan)
+model Report {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type            ReportType
+  status          ReportStatus @default(PENDING)
+  itemName        String       @map("item_name")
+  categoryId      String       @map("category_id") @db.Uuid
+  description     String?
+  location        String
+  date            DateTime
+  time            String?
+  reporterId      String       @map("reporter_id") @db.Uuid
+  isGuest         Boolean      @default(false) @map("is_guest")
+  guestName       String?      @map("guest_name")
+  guestPhone      String?      @map("guest_phone")
+  rejectionReason String?      @map("rejection_reason")
+  verifiedAt      DateTime?    @map("verified_at")
+  expiredAt       DateTime?    @map("expired_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  category Category     @relation(fields: [categoryId], references: [id])
+  reporter Profile      @relation(fields: [reporterId], references: [id])
+  images   ReportImage[]
+  claims   Claim[]
+  comments Comment[]
+
+  @@map("reports")
+}
+
+// Foto Laporan
+model ReportImage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId  String   @map("report_id") @db.Uuid
+  url       String
+  fileName  String   @map("file_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("report_images")
+}
+
+// Klaim Barang
+model Claim {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId        String      @map("report_id") @db.Uuid
+  claimantId      String      @map("claimant_id") @db.Uuid
+  status          ClaimStatus @default(PENDING)
+  type            ClaimType   @default(ONLINE)
+  description     String
+  rejectionReason String?     @map("rejection_reason")
+  adminNote       String?     @map("admin_note")
+  isGuest         Boolean     @default(false) @map("is_guest")
+  guestName       String?     @map("guest_name")
+  guestPhone      String?     @map("guest_phone")
+  approvedAt      DateTime?   @map("approved_at")
+  completedAt     DateTime?   @map("completed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  report   Report      @relation(fields: [reportId], references: [id])
+  claimant Profile     @relation(fields: [claimantId], references: [id])
+  images   ClaimImage[]
+  comments Comment[]
+
+  @@map("claims")
+}
+
+// Foto Bukti Klaim
+model ClaimImage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  claimId   String   @map("claim_id") @db.Uuid
+  url       String
+  fileName  String   @map("file_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  claim Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@map("claim_images")
+}
+
+// Komentar (bisa di laporan ATAU klaim, private)
+model Comment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content   String
+  authorId  String   @map("author_id") @db.Uuid
+  reportId  String?  @map("report_id") @db.Uuid
+  claimId   String?  @map("claim_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author Profile @relation(fields: [authorId], references: [id])
+  report Report? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  claim  Claim?  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// Notifikasi In-App
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// Pengumuman
+model Announcement {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String
+  content   String
+  imageUrl  String?  @map("image_url")
+  publishAt DateTime @map("publish_at")
+  expiredAt DateTime @map("expired_at")
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  creator Profile @relation("AnnouncementCreator", fields: [createdBy], references: [id])
+
+  @@map("announcements")
+}
+
+// Audit Trail
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action     String
+  actorId    String?  @map("actor_id") @db.Uuid
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id") @db.Uuid
+  detail     String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor Profile? @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Request Reset Password
+model PasswordResetRequest {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  status      PasswordResetStatus @default(PENDING)
+  processedBy String?             @map("processed_by") @db.Uuid
+  processedAt DateTime?           @map("processed_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  user      Profile  @relation("PasswordRequester", fields: [userId], references: [id])
+  processor Profile? @relation("PasswordResetProcessor", fields: [processedBy], references: [id])
+
+  @@map("password_reset_requests")
+}
