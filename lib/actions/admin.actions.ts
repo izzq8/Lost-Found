@@ -1,0 +1,535 @@
+"use server";
+
+import { requireAdmin } from "@/lib/utils/auth-guard";
+import { prisma } from "@/lib/prisma/client";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+// ── CREATE ADMIN ACCOUNT ──────────────────────────────────────────────────────
+
+export async function createAdminAccount(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile: adminProfile } = await requireAdmin();
+
+    const name = (formData.get("name") as string)?.trim();
+    const email = (formData.get("email") as string)?.trim();
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+    const jabatan = (formData.get("jabatan") as string)?.toUpperCase();
+
+    // Validation
+    if (!name || !email || !password || !jabatan) {
+      return { success: false, error: "Semua field wajib diisi." };
+    }
+    if (password.length < 8) {
+      return { success: false, error: "Password minimal 8 karakter." };
+    }
+    if (password !== confirmPassword) {
+      return { success: false, error: "Konfirmasi password tidak cocok." };
+    }
+    if (!["SECURITY", "FRONT_OFFICE", "GURU_PIKET"].includes(jabatan)) {
+      return { success: false, error: "Jabatan tidak valid." };
+    }
+
+    // Check existing email
+    const existing = await prisma.profile.findUnique({ where: { email } });
+    if (existing) {
+      return { success: false, error: "Email sudah terdaftar." };
+    }
+
+    // Create in Supabase Auth
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { name, role: "ADMIN", jabatan },
+    });
+
+    if (authError || !authData.user) {
+      return { success: false, error: `Gagal membuat akun: ${authError?.message}` };
+    }
+
+    // Create profile in DB
+    await prisma.$transaction(async (tx) => {
+      await tx.profile.create({
+        data: {
+          id: authData.user.id,
+          email,
+          name,
+          role: "ADMIN",
+          jabatan: jabatan as any,
+          status: "ACTIVE",
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "ADMIN_CREATED",
+          actorId: user.id,
+          targetType: "User",
+          targetId: authData.user.id,
+          detail: `Admin '${adminProfile.name}' membuat akun admin baru '${name}' (${jabatan}).`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("createAdminAccount error:", err);
+    return { success: false, error: "Gagal membuat akun admin." };
+  }
+}
+
+// ── PROCESS PASSWORD RESET ────────────────────────────────────────────────────
+
+export async function processPasswordReset(
+  requestId: string
+): Promise<{ success: boolean; error?: string; newPassword?: string }> {
+  try {
+    const { user, profile: adminProfile } = await requireAdmin();
+
+    const req = await prisma.passwordResetRequest.findUnique({
+      where: { id: requestId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    if (!req) return { success: false, error: "Request tidak ditemukan." };
+    if (req.status === "PROCESSED") return { success: false, error: "Request sudah diproses." };
+
+    // Generate random password
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#";
+    let newPassword = "SmkFn";
+    for (let i = 0; i < 8; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    newPassword += "!";
+
+    // Update password in Supabase Auth
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, {
+      password: newPassword,
+    });
+
+    if (authError) {
+      return { success: false, error: `Gagal mengubah password: ${authError.message}` };
+    }
+
+    // Update request status
+    await prisma.$transaction(async (tx) => {
+      await tx.passwordResetRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "PROCESSED",
+          processedBy: user.id,
+          processedAt: new Date(),
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: req.user.id,
+          type: "PASSWORD_RESET",
+          message: `Password Anda telah direset oleh admin. Silakan hubungi admin untuk mendapatkan password baru.`,
+          data: {},
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "PASSWORD_RESET",
+          actorId: user.id,
+          targetType: "User",
+          targetId: req.user.id,
+          detail: `Admin '${adminProfile.name}' mereset password user '${req.user.name}'.`,
+        },
+      });
+    });
+
+    return { success: true, newPassword };
+  } catch (err: any) {
+    console.error("processPasswordReset error:", err);
+    return { success: false, error: "Gagal mereset password." };
+  }
+}
+
+// ── CATEGORY IMAGE UPLOAD HELPER ──────────────────────────────────────────────
+
+const ALLOWED_CATEGORY_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_CATEGORY_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+
+const IMAGE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xff, 0xd8, 0xff]],
+  "image/png": [[0x89, 0x50, 0x4e, 0x47]],
+  "image/webp": [[0x52, 0x49, 0x46, 0x46]],
+};
+
+async function validateImageMagicBytes(file: File, mimeType: string): Promise<boolean> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer.slice(0, 8));
+  const signatures = IMAGE_SIGNATURES[mimeType];
+  if (!signatures) return false;
+  return signatures.some((sig) => sig.every((byte, idx) => bytes[idx] === byte));
+}
+
+async function uploadCategoryImage(file: File): Promise<{ url: string; fileName: string } | null> {
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+    const fileName = `category-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+    const { data, error } = await supabaseAdmin.storage
+      .from("category-images")
+      .upload(fileName, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("Category image upload error:", error.message);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from("category-images")
+      .getPublicUrl(data.path);
+
+    return { url: publicUrl, fileName };
+  } catch (err) {
+    console.error("uploadCategoryImage failed:", err);
+    return null;
+  }
+}
+
+async function deleteCategoryImage(imageUrl: string) {
+  try {
+    // Extract filename from URL
+    const url = new URL(imageUrl);
+    const pathParts = url.pathname.split("/category-images/");
+    if (pathParts.length < 2) return;
+    const fileName = pathParts[1];
+    await supabaseAdmin.storage.from("category-images").remove([fileName]);
+  } catch (err) {
+    console.error("deleteCategoryImage failed:", err);
+  }
+}
+
+// ── CATEGORY CRUD ─────────────────────────────────────────────────────────────
+
+export async function createCategory(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    const name = (formData.get("name") as string)?.trim();
+    const file = formData.get("image") as File | null;
+
+    if (!name) return { success: false, error: "Nama kategori wajib diisi." };
+    if (!file || file.size === 0) return { success: false, error: "Gambar kategori wajib diunggah." };
+
+    // Validate file type
+    if (!ALLOWED_CATEGORY_IMAGE_TYPES.includes(file.type)) {
+      return { success: false, error: "Format gambar harus JPEG, PNG, atau WebP." };
+    }
+
+    // Validate file size
+    if (file.size > MAX_CATEGORY_IMAGE_SIZE) {
+      return { success: false, error: "Ukuran gambar maksimal 2MB." };
+    }
+
+    // Validate magic bytes
+    const isValid = await validateImageMagicBytes(file, file.type);
+    if (!isValid) {
+      return { success: false, error: "File gambar tidak valid atau rusak." };
+    }
+
+    // Check duplicate name
+    const existing = await prisma.category.findUnique({ where: { name } });
+    if (existing) return { success: false, error: "Kategori dengan nama ini sudah ada." };
+
+    // Upload image
+    const uploadResult = await uploadCategoryImage(file);
+    if (!uploadResult) return { success: false, error: "Gagal mengunggah gambar." };
+
+    await prisma.$transaction(async (tx) => {
+      const cat = await tx.category.create({
+        data: { name, imageUrl: uploadResult.url },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "CATEGORY_CREATED",
+          actorId: user.id,
+          targetType: "Category",
+          targetId: cat.id,
+          detail: `Admin '${profile.name}' membuat kategori '${name}'.`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("createCategory error:", err);
+    return { success: false, error: "Gagal membuat kategori." };
+  }
+}
+
+export async function updateCategory(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    const categoryId = formData.get("categoryId") as string;
+    const name = (formData.get("name") as string)?.trim();
+    const file = formData.get("image") as File | null;
+    const hasNewFile = file && file.size > 0;
+
+    if (!categoryId) return { success: false, error: "ID kategori tidak valid." };
+    if (!name) return { success: false, error: "Nama kategori wajib diisi." };
+
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) return { success: false, error: "Kategori tidak ditemukan." };
+
+    // Check duplicate name (excluding self)
+    const existing = await prisma.category.findFirst({
+      where: { name, id: { not: categoryId } },
+    });
+    if (existing) return { success: false, error: "Kategori dengan nama ini sudah ada." };
+
+    let imageUrl = category.imageUrl;
+
+    if (hasNewFile) {
+      // Validate file
+      if (!ALLOWED_CATEGORY_IMAGE_TYPES.includes(file.type)) {
+        return { success: false, error: "Format gambar harus JPEG, PNG, atau WebP." };
+      }
+      if (file.size > MAX_CATEGORY_IMAGE_SIZE) {
+        return { success: false, error: "Ukuran gambar maksimal 2MB." };
+      }
+      const isValid = await validateImageMagicBytes(file, file.type);
+      if (!isValid) {
+        return { success: false, error: "File gambar tidak valid atau rusak." };
+      }
+
+      // Upload new image
+      const uploadResult = await uploadCategoryImage(file);
+      if (!uploadResult) return { success: false, error: "Gagal mengunggah gambar baru." };
+
+      // Delete old image
+      if (category.imageUrl) {
+        await deleteCategoryImage(category.imageUrl);
+      }
+
+      imageUrl = uploadResult.url;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.category.update({
+        where: { id: categoryId },
+        data: { name, imageUrl },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "CATEGORY_UPDATED",
+          actorId: user.id,
+          targetType: "Category",
+          targetId: categoryId,
+          detail: `Admin '${profile.name}' mengubah kategori menjadi '${name}'.`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateCategory error:", err);
+    return { success: false, error: "Gagal mengubah kategori." };
+  }
+}
+
+export async function deleteCategory(categoryId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    // Check if any reports use this category
+    const reportCount = await prisma.report.count({ where: { categoryId } });
+    if (reportCount > 0) {
+      return { success: false, error: `Kategori ini digunakan oleh ${reportCount} laporan dan tidak bisa dihapus.` };
+    }
+
+    const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!cat) return { success: false, error: "Kategori tidak ditemukan." };
+
+    // Delete image from storage
+    if (cat.imageUrl) {
+      await deleteCategoryImage(cat.imageUrl);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.category.delete({ where: { id: categoryId } });
+
+      await tx.auditLog.create({
+        data: {
+          action: "CATEGORY_DELETED",
+          actorId: user.id,
+          targetType: "Category",
+          targetId: categoryId,
+          detail: `Admin '${profile.name}' menghapus kategori '${cat.name}'.`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("deleteCategory error:", err);
+    return { success: false, error: "Gagal menghapus kategori." };
+  }
+}
+
+
+// ── ENROLLMENT CODE MANAGEMENT ────────────────────────────────────────────────
+
+export async function generateEnrollmentCode(
+  type: "SISWA" | "GURU"
+): Promise<{ success: boolean; error?: string; code?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    // Generate random code
+    const prefix = type === "SISWA" ? "FWD-SISWA" : "FWD-GURU";
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let suffix = "";
+    for (let i = 0; i < 4; i++) {
+      suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const code = `${prefix}-${suffix}`;
+
+    // Calculate expiry (end of current semester)
+    const now = new Date();
+    const month = now.getMonth();
+    // Jan-Jun → expired Juli 31, Jul-Dec → expired Jan 31 next year
+    const expiredAt = month < 6
+      ? new Date(now.getFullYear(), 6, 31)
+      : new Date(now.getFullYear() + 1, 0, 31);
+
+    await prisma.$transaction(async (tx) => {
+      // Deactivate existing active code of the same type
+      await tx.enrollmentCode.updateMany({
+        where: { type, status: "ACTIVE" },
+        data: { status: "INACTIVE", deactivatedAt: new Date() },
+      });
+
+      // Create new code
+      await tx.enrollmentCode.create({
+        data: {
+          code,
+          type,
+          status: "ACTIVE",
+          createdBy: user.id,
+          expiredAt,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "ENROLLMENT_CODE_GENERATED",
+          actorId: user.id,
+          targetType: "EnrollmentCode",
+          detail: `Admin '${profile.name}' men-generate enrollment code ${type} baru: ${code}.`,
+        },
+      });
+    });
+
+    return { success: true, code };
+  } catch (err: any) {
+    console.error("generateEnrollmentCode error:", err);
+    return { success: false, error: "Gagal membuat enrollment code." };
+  }
+}
+
+export async function deactivateEnrollmentCode(
+  codeId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    const ec = await prisma.enrollmentCode.findUnique({ where: { id: codeId } });
+    if (!ec) return { success: false, error: "Code tidak ditemukan." };
+    if (ec.status === "INACTIVE") return { success: false, error: "Code sudah nonaktif." };
+
+    await prisma.$transaction(async (tx) => {
+      await tx.enrollmentCode.update({
+        where: { id: codeId },
+        data: { status: "INACTIVE", deactivatedAt: new Date() },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: "ENROLLMENT_CODE_DEACTIVATED",
+          actorId: user.id,
+          targetType: "EnrollmentCode",
+          targetId: codeId,
+          detail: `Admin '${profile.name}' menonaktifkan enrollment code '${ec.code}'.`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("deactivateEnrollmentCode error:", err);
+    return { success: false, error: "Gagal menonaktifkan code." };
+  }
+}
+
+// ── GET FILTERED REPORTS FOR EXPORT ────────────────────────────────────────────
+
+export async function getFilteredReportsForExport(filters: {
+  dateFrom?: string;
+  dateTo?: string;
+  type?: string;
+  status?: string;
+}) {
+  try {
+    await requireAdmin();
+
+    const where: any = {};
+
+    if (filters.type && filters.type !== "all") {
+      where.type = filters.type;
+    }
+    if (filters.status && filters.status !== "all") {
+      where.status = filters.status;
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      where.createdAt = {};
+      if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+      if (filters.dateTo) {
+        const end = new Date(filters.dateTo);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    const reports = await prisma.report.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: { select: { name: true } },
+        reporter: { select: { name: true, jabatan: true } },
+      },
+      take: 1000,
+    });
+
+    return reports.map((r) => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      itemName: r.itemName,
+      category: r.category.name,
+      location: r.location,
+      description: r.description || "-",
+      reporterName: r.reporter.name,
+      reporterJabatan: r.reporter.jabatan,
+      date: r.date.toISOString().split("T")[0],
+      createdAt: r.createdAt.toISOString().split("T")[0],
+      updatedAt: r.updatedAt.toISOString().split("T")[0],
+    }));
+  } catch (error) {
+    console.error("getFilteredReportsForExport error:", error);
+    return [];
+  }
+}

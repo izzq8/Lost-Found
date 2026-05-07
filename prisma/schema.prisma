@@ -2,8 +2,7 @@
 // SMK Forward Nusantara
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -48,9 +47,11 @@ enum ReportType {
 enum ReportStatus {
   PENDING
   VERIFIED
+  AWAITING_PICKUP
   CLAIMED
   REJECTED
   EXPIRED
+  RESOLVED
 }
 
 enum ClaimStatus {
@@ -68,6 +69,14 @@ enum ClaimType {
 enum PasswordResetStatus {
   PENDING
   PROCESSED
+}
+
+enum FoundMatchStatus {
+  PENDING
+  APPROVED
+  ITEM_RECEIVED
+  COMPLETED
+  REJECTED
 }
 
 // ===== MODELS =====
@@ -96,6 +105,7 @@ model Profile {
   enrollmentCodesCreated  EnrollmentCode[]       @relation("EnrollmentCodeCreator")
   announcementsCreated    Announcement[]         @relation("AnnouncementCreator")
   passwordResetsProcessed PasswordResetRequest[] @relation("PasswordResetProcessor")
+  foundMatches            FoundMatch[]           @relation("FoundMatches")
 
   @@map("profiles")
 }
@@ -156,6 +166,7 @@ model Report {
   images   ReportImage[]
   claims   Claim[]
   comments Comment[]
+  foundMatches FoundMatch[]
 
   @@map("reports")
 }
@@ -291,4 +302,42 @@ model PasswordResetRequest {
   processor Profile? @relation("PasswordResetProcessor", fields: [processedBy], references: [id])
 
   @@map("password_reset_requests")
+}
+
+// Found Match (penemu melaporkan penemuan barang hilang user lain)
+model FoundMatch {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId        String           @map("report_id") @db.Uuid
+  finderId        String           @map("finder_id") @db.Uuid
+  description     String           @db.Text
+  status          FoundMatchStatus @default(PENDING)
+  rejectionReason String?          @map("rejection_reason")
+  adminNote       String?          @map("admin_note") @db.Text
+
+  // Timestamps
+  approvedAt     DateTime? @map("approved_at")
+  itemReceivedAt DateTime? @map("item_received_at")
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  report Report  @relation(fields: [reportId], references: [id])
+  finder Profile @relation("FoundMatches", fields: [finderId], references: [id])
+  images FoundMatchImage[]
+
+  @@map("found_matches")
+}
+
+// Foto Bukti Found Match
+model FoundMatchImage {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  foundMatchId String     @map("found_match_id") @db.Uuid
+  url          String
+  fileName     String     @map("file_name")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  foundMatch FoundMatch @relation(fields: [foundMatchId], references: [id], onDelete: Cascade)
+
+  @@map("found_match_images")
 }
