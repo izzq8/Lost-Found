@@ -85,7 +85,8 @@ export default function AdminUsersClient({
 
       {/* Table */}
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -169,6 +170,49 @@ export default function AdminUsersClient({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-slate-400">
+              Tidak ada user yang sesuai filter.
+            </div>
+          ) : (
+            filtered.map((u) => (
+              <div key={u.id} className="flex items-center gap-3 p-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
+                  style={{ background: "#FFEDD5", color: "#C2410C" }}
+                >
+                  {u.avatarInitials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-800 truncate">{u.name}</span>
+                    <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold ${u.role === "ADMIN" ? "bg-orange-50 text-orange-600" : "bg-slate-100 text-slate-500"}`}>
+                      {u.role === "ADMIN" ? "Admin" : "User"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">{u.email}</p>
+                  <p className="text-xs text-slate-400 capitalize">{u.jabatan.toLowerCase().replace(/_/g, " ")}</p>
+                </div>
+                <div className="shrink-0">
+                  {loadingId === u.id ? (
+                    <Loader2 size={18} className="animate-spin text-slate-400" />
+                  ) : tab === "ACTIVE" ? (
+                    <button onClick={() => handleToggle(u.id, u.status)} className="p-2 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer" title="Nonaktifkan">
+                      <ToggleRight size={18} />
+                    </button>
+                  ) : (
+                    <button onClick={() => handleToggle(u.id, u.status)} className="p-2 rounded-lg hover:bg-green-50 text-green-500 cursor-pointer" title="Aktifkan">
+                      <ToggleLeft size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </>

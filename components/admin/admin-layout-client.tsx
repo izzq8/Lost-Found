@@ -233,7 +233,7 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
       )}
 
       {/* ── MAIN CONTENT AREA ───────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col transition-all duration-300" style={{ marginLeft: collapsed ? 72 : 260 }}>
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ml-0 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
         {/* Top Bar */}
         <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-4 lg:px-6">
           {/* Left: Hamburger + Breadcrumb */}
@@ -244,10 +244,10 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
             >
               <Menu size={20} className="text-slate-600" />
             </button>
-            <div className="text-sm text-slate-500 font-medium">
+            <div className="text-sm text-slate-500 font-medium truncate max-w-[180px] sm:max-w-none">
               <span className="text-slate-800 font-semibold">Admin</span>
               {pathname !== "/admin" && (
-                <span> / {pathname.split("/").filter(Boolean).slice(1).join(" / ")}</span>
+                <span className="hidden sm:inline"> / {pathname.split("/").filter(Boolean).slice(1).join(" / ")}</span>
               )}
             </div>
           </div>
@@ -265,7 +265,13 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
                 )}
               </button>
               {showNotif && (
-                <div className="absolute top-full mt-1.5 right-0 w-[320px] bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xl">
+                <div
+                  className="lg:hidden fixed inset-0 bg-black/20 z-[79]"
+                  onClick={() => setShowNotif(false)}
+                />
+              )}
+              {showNotif && (
+                <div className="fixed lg:absolute top-16 lg:top-full lg:mt-1.5 left-0 right-0 lg:left-auto lg:right-0 lg:w-[320px] mx-2 lg:mx-0 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xl z-[80]">
                   <div className="px-4 py-3 border-b border-slate-100 font-semibold text-sm text-slate-800">Notifikasi</div>
                   {notifLoading ? (
                     <div className="p-6 text-center">
@@ -335,7 +341,7 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 lg:p-6 xl:p-8">
+        <main className="flex-1 min-w-0 p-4 lg:p-6 xl:p-8">
           {children}
         </main>
       </div>

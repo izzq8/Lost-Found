@@ -73,7 +73,8 @@ export default function AdminClaimsClient({ claims, pendingCount }: { claims: Cl
       </div>
 
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -134,6 +135,42 @@ export default function AdminClaimsClient({ claims, pendingCount }: { claims: Cl
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-slate-400">
+              Tidak ada klaim yang sesuai filter.
+            </div>
+          ) : (
+            filtered.map((c) => {
+              const thumbnailUrl = c.imageUrl || null;
+              const categoryImg = c.categoryImageUrl && (c.categoryImageUrl.startsWith("http://") || c.categoryImageUrl.startsWith("https://")) ? c.categoryImageUrl : null;
+              return (
+                <Link key={c.id} href={`/admin/claims/${c.id}`} className="flex items-center gap-3 p-4 hover:bg-orange-50/30 transition-colors">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
+                    {thumbnailUrl ? (
+                      <img src={thumbnailUrl} alt={c.itemName} className="w-full h-full object-cover" />
+                    ) : categoryImg ? (
+                      <img src={categoryImg} alt={c.category} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package size={20} className="text-slate-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{c.itemName}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                      <span>{c.claimantName}</span>
+                      <span>·</span>
+                      <span>{new Date(c.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                    </div>
+                  </div>
+                  <StatusBadge status={c.status} />
+                </Link>
+              );
+            })
+          )}
         </div>
       </div>
     </>

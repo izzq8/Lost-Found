@@ -7,8 +7,19 @@ import {
   LayoutDashboard, Users, FileText, ClipboardList, KeyRound,
   CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp,
 } from "lucide-react";
-import AdminDashboardCharts from "./_components/admin-dashboard-charts";
+import dynamic from "next/dynamic";
 
+const AdminDashboardCharts = dynamic(
+  () => import("./_components/admin-dashboard-charts"),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
+        <div className="lg:col-span-2 h-80 bg-slate-200 rounded-2xl" />
+        <div className="h-80 bg-slate-200 rounded-2xl" />
+      </div>
+    ),
+  }
+);
 export const metadata = { title: "Dashboard Admin — LostFound SMKFN" };
 
 export default async function AdminDashboardPage() {
@@ -131,7 +142,8 @@ export default async function AdminDashboardPage() {
               Lihat Semua <ArrowRight size={14} />
             </Link>
           </div>
-          <div className="overflow-x-auto flex-1 p-2">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto flex-1 p-2">
             <table className="w-full text-left">
               <thead>
                 <tr>
@@ -158,6 +170,28 @@ export default async function AdminDashboardPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y divide-slate-50 flex-1">
+            {recentReports.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-800 truncate">{r.itemName}</span>
+                    <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${r.type === "LOST" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+                      {r.type === "LOST" ? "Hilang" : "Ditemukan"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                    <span>{r.reporter.name}</span>
+                    <span>·</span>
+                    <span>{r.createdAt.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                  </div>
+                </div>
+                <StatusBadge status={r.status} />
+              </div>
+            ))}
           </div>
         </div>
 

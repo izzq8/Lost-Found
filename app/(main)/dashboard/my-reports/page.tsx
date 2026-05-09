@@ -21,7 +21,7 @@ export default async function MyReportsPage({
   const reports = await prisma.report.findMany({
     where: { reporterId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { category: true },
+    include: { category: true, images: { take: 1, select: { url: true } } },
   });
 
   const lostCount = reports.filter(
@@ -39,6 +39,16 @@ export default async function MyReportsPage({
         title="Riwayat Laporan Saya"
         subtitle={`${reports.length} laporan total · ${lostCount + foundCount} aktif`}
       />
+
+      {/* Tab Navigation */}
+      <div className="flex bg-slate-100/70 p-1 rounded-xl w-fit border border-slate-200/50">
+        <Link href="/dashboard/my-reports" className="px-5 py-2 text-sm font-semibold rounded-lg bg-white text-orange-600 shadow-sm border border-slate-200/60">
+          Laporan Saya
+        </Link>
+        <Link href="/dashboard/my-claims" className="px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 transition-colors">
+          Klaim Saya
+        </Link>
+      </div>
 
       {/* Success Toast */}
       {params.success && (
@@ -102,16 +112,16 @@ export default async function MyReportsPage({
                   boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
               >
-                {/* Type Tag */}
-                <div
-                  className={`mt-0.5 shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                    report.type === "LOST" ? "bg-red-50" : "bg-green-50"
-                  }`}
-                >
-                  <Package
-                    size={18}
-                    className={report.type === "LOST" ? "text-red-400" : "text-green-500"}
-                  />
+                {/* Thumbnail */}
+                <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center relative">
+                  <div className={`absolute top-0 left-0 w-full h-0.5 ${report.type === "LOST" ? "bg-red-500" : "bg-green-500"}`} />
+                  {report.images.length > 0 ? (
+                    <img src={report.images[0].url} alt="" className="w-full h-full object-cover" />
+                  ) : report.category.imageUrl && report.category.imageUrl.startsWith("http") ? (
+                    <img src={report.category.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Package size={24} className="text-slate-300" />
+                  )}
                 </div>
 
                 {/* Content */}

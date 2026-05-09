@@ -24,20 +24,26 @@ export default async function MainLayout({
     // redirect("/admin/dashboard");
   }
 
-  // Fetch unread notifications count (for Phase 3, we just count them if schema allows, or return 0 for now)
-  const unreadCount = await prisma.notification.count({
-    where: { userId: user.id, isRead: false }
-  });
-
-  // Count reports with actionable found-matches (item found, needs pickup)
-  const actionableReportsCount = await prisma.report.count({
-    where: {
-      reporterId: user.id,
-      type: "LOST",
-      status: { in: ["VERIFIED", "AWAITING_PICKUP"] },
-      foundMatches: { some: { status: { in: ["APPROVED", "ITEM_RECEIVED"] } } },
-    },
-  });
+  // Parallel data fetching — all counts are independent
+  const [unreadCount, actionableReportsCount, actionableClaimsCount] = await Promise.all([
+    prisma.notification.count({
+      where: { userId: user.id, isRead: false }
+    }),
+    prisma.report.count({
+      where: {
+        reporterId: user.id,
+        type: "LOST",
+        status: { in: ["VERIFIED", "AWAITING_PICKUP"] },
+        foundMatches: { some: { status: { in: ["APPROVED", "ITEM_RECEIVED"] } } },
+      },
+    }),
+    prisma.claim.count({
+      where: {
+        claimantId: user.id,
+        status: "APPROVED",
+      },
+    }),
+  ]);
 
   // Prepare safe serializable user object for client
   const clientUser = {
@@ -49,7 +55,12 @@ export default async function MainLayout({
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: '#F8FAFC', fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}>
-      <UserNavClient currentUser={clientUser} unreadCount={unreadCount} actionableReportsCount={actionableReportsCount} />
+      <UserNavClient 
+        currentUser={clientUser} 
+        unreadCount={unreadCount} 
+        actionableReportsCount={actionableReportsCount} 
+        actionableClaimsCount={actionableClaimsCount}
+      />
       
       {/* Content */}
       <main className="flex-1 pt-[64px] pb-[76px] lg:pb-0">
@@ -66,7 +77,7 @@ export default async function MainLayout({
       </footer>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
+      <MobileBottomNav actionableClaimsCount={actionableClaimsCount} />
     </div>
   );
 }

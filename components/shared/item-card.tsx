@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Calendar } from 'lucide-react';
 import { StatusBadge } from './status-badge';
 import { CategoryIcon } from './category-icon';
@@ -44,10 +45,12 @@ export function ItemCard({ report }: ItemCardProps) {
         />
         {report.type === 'LOST' ? (
           report.reportImageUrl ? (
-            <img
+            <Image
               src={report.reportImageUrl}
               alt={report.itemName}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 50vw, 25vw"
             />
           ) : (
             <CategoryIcon

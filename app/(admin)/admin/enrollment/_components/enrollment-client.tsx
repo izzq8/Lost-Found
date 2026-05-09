@@ -218,7 +218,8 @@ export default function EnrollmentClient({ codes }: { codes: CodeItem[] }) {
           <h3 className="text-base font-bold text-slate-800">Riwayat Code</h3>
           <p className="text-sm text-slate-500">Code yang sudah tidak aktif</p>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -267,6 +268,40 @@ export default function EnrollmentClient({ codes }: { codes: CodeItem[] }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {history.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              Belum ada riwayat code.
+            </div>
+          ) : (
+            history.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 p-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-semibold text-slate-800 font-mono">{c.code}</span>
+                    <span
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        background: c.type === "GURU" ? "#F5F3FF" : "#FFF7ED",
+                        color: c.type === "GURU" ? "#7C3AED" : "#EA580C",
+                        border: `1px solid ${c.type === "GURU" ? "#DDD6FE" : "#FED7AA"}`,
+                      }}
+                    >
+                      {c.type === "SISWA" ? "Siswa" : "Guru"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <span>{new Date(c.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                    <span>·</span>
+                    <span>{c.usageCount} pengguna</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageGalleryProps {
@@ -27,11 +28,14 @@ export function ImageGallery({ images }: ImageGalleryProps) {
   // Single image — no navigation
   if (images.length === 1) {
     return (
-      <div className="bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center max-h-[400px]">
-        <img
+      <div className="bg-slate-50 rounded-2xl overflow-hidden relative" style={{ height: "clamp(200px, 40vw, 400px)" }}>
+        <Image
           src={images[0].url}
           alt={images[0].alt}
-          className="w-full max-h-[400px] object-contain"
+          fill
+          className="object-contain"
+          sizes="(max-width: 768px) 100vw, 66vw"
+          priority
         />
       </div>
     );
@@ -40,15 +44,18 @@ export function ImageGallery({ images }: ImageGalleryProps) {
   return (
     <div className="relative group">
       {/* Main Image Container */}
-      <div className="bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center max-h-[400px] relative">
+      <div className="bg-slate-50 rounded-2xl overflow-hidden relative" style={{ height: "clamp(200px, 40vw, 400px)" }}>
         {images.map((img, idx) => (
-          <img
+          <Image
             key={idx}
             src={img.url}
             alt={img.alt}
-            className={`w-full max-h-[400px] object-contain transition-opacity duration-300 ${
-              idx === currentIndex ? "opacity-100" : "opacity-0 absolute inset-0"
+            fill
+            className={`object-contain transition-opacity duration-300 ${
+              idx === currentIndex ? "opacity-100" : "opacity-0"
             }`}
+            sizes="(max-width: 768px) 100vw, 66vw"
+            priority={idx === 0}
           />
         ))}
       </div>

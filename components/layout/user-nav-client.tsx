@@ -37,9 +37,10 @@ interface UserNavClientProps {
   };
   unreadCount?: number;
   actionableReportsCount?: number;
+  actionableClaimsCount?: number;
 }
 
-export default function UserNavClient({ currentUser, unreadCount = 0, actionableReportsCount = 0 }: UserNavClientProps) {
+export default function UserNavClient({ currentUser, unreadCount = 0, actionableReportsCount = 0, actionableClaimsCount = 0 }: UserNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -210,8 +211,8 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
             <DropdownMenu id="lapor" label="Lapor" items={laporItems} />
             <DropdownMenu id="riwayat" label="Riwayat" items={[
               { icon: FileText, label: 'Riwayat Laporan', href: '/dashboard/my-reports', badge: actionableReportsCount },
-              { icon: ClipboardList, label: 'Riwayat Klaim', href: '/dashboard/my-claims' },
-            ]} badge={actionableReportsCount} />
+              { icon: ClipboardList, label: 'Riwayat Klaim', href: '/dashboard/my-claims', badge: actionableClaimsCount },
+            ]} badge={(actionableReportsCount + actionableClaimsCount) || 0} />
           </nav>
 
           <div className="flex items-center gap-2">
@@ -233,7 +234,13 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
               </button>
               {showNotif && (
                 <div
-                  className="absolute top-full mt-1.5 right-0 w-[320px] bg-white/95 backdrop-blur-xl rounded-xl border border-white/50 overflow-hidden"
+                  className="lg:hidden fixed inset-0 bg-black/20 z-[79]"
+                  onClick={() => setShowNotif(false)}
+                />
+              )}
+              {showNotif && (
+                <div
+                  className="fixed lg:absolute top-[64px] lg:top-full lg:mt-1.5 left-0 right-0 lg:left-auto lg:right-0 lg:w-[320px] mx-2 lg:mx-0 bg-white/95 backdrop-blur-xl rounded-xl border border-white/50 overflow-hidden z-[80]"
                   style={{ boxShadow: '0 12px 32px rgba(0,0,0,0.12)' }}
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
