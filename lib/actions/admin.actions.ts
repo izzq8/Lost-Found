@@ -533,3 +533,213 @@ export async function getFilteredReportsForExport(filters: {
     return [];
   }
 }
+
+// ── ADMIN DELETE REPORT ───────────────────────────────────────────────────────
+
+export async function adminDeleteReport(
+  reportId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user, profile } = await requireAdmin();
+
+    const report = await prisma.report.findUnique({
+      where: { id: reportId },
+      include: {
+        images: true,
+        claims: { include: { images: true } },
+        foundMatches: { include: { images: true } },
+        comments: true,
+      },
+    });
+
+    if (!report) {
+      return { success: false, error: "Laporan tidak ditemukan." };
+    }
+
+    // Only allow delete for PENDING or REJECTED
+    if (!["PENDING", "REJECTED"].includes(report.status)) {
+      return {
+        success: false,
+        error: `Hanya laporan berstatus PENDING atau REJECTED yang dapat dihapus oleh admin. Status saat ini: ${report.status}.`,
+      };
+    }
+
+    // 1. Collect all storage files to delete
+    const filesToDelete: { bucket: string; files: string[] }[] = [];
+
+    if (report.images.length > 0) {
+      filesToDelete.push({
+        bucket: "report-images",
+        files: report.images.map((img) => img.fileName),
+      });
+    }
+
+    for (const claim of report.claims) {
+      if (claim.images.length > 0) {
+        filesToDelete.push({
+          bucket: "claim-images",
+          files: claim.images.map((img) => img.fileName),
+        });
+      }
+    }
+
+    for (const fm of report.foundMatches) {
+      if (fm.images.length > 0) {
+        filesToDelete.push({
+          bucket: "found-match-images",
+          files: fm.images.map((img) => img.fileName),
+        });
+      }
+    }
+
+    // 2. Delete storage files
+    for (const { bucket, files } of filesToDelete) {
+      const { error } = await supabaseAdmin.storage.from(bucket).remove(files);
+      if (error) {
+        console.error(`Failed to delete from ${bucket}:`, error.message);
+      }
+    }
+
+    // 3. Cascade delete in transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.comment.deleteMany({ where: { reportId } });
+      await tx.claimImage.deleteMany({ where: { claim: { reportId } } });
+      await tx.claim.deleteMany({ where: { reportId } });
+      await tx.foundMatchImage.deleteMany({ where: { foundMatch: { reportId } } });
+      await tx.foundMatch.deleteMany({ where: { reportId } });
+      await tx.reportImage.deleteMany({ where: { reportId } });
+      await tx.report.delete({ where: { id: reportId } });
+
+      await tx.auditLog.create({
+        data: {
+          action: "ADMIN_REPORT_DELETED",
+          actorId: user.id,
+          targetType: "Report",
+          targetId: reportId,
+          detail: `Admin '${profile.name}' menghapus laporan ${report.type}: "${report.itemName}" (status: ${report.status}).`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("adminDeleteReport error:", error);
+    return { success: false, error: "Gagal menghapus laporan." };
+  }
+}
+
+// ── ADMIN DELETE USER ─────────────────────────────────────────────────────────
+
+export async function adminDeleteUser(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user: adminUser, profile: adminProfile } = await requireAdmin();
+
+    // Prevent self-delete
+    if (userId === adminUser.id) {
+      return { success: false, error: "Anda tidak dapat menghapus akun Anda sendiri." };
+    }
+
+    const targetProfile = await prisma.profile.findUnique({
+      where: { id: userId },
+    });
+
+    if (!targetProfile) {
+      return { success: false, error: "User tidak ditemukan." };
+    }
+
+    // Check active reports
+    const activeReportCount = await prisma.report.count({
+      where: {
+        reporterId: userId,
+        status: { in: ["PENDING", "VERIFIED", "AWAITING_PICKUP"] },
+      },
+    });
+
+    if (activeReportCount > 0) {
+      return {
+        success: false,
+        error: `User memiliki ${activeReportCount} laporan aktif. Selesaikan/tolak semua laporan terlebih dahulu sebelum menghapus akun.`,
+      };
+    }
+
+    // Check active claims
+    const activeClaimCount = await prisma.claim.count({
+      where: {
+        claimantId: userId,
+        status: { in: ["PENDING", "APPROVED"] },
+      },
+    });
+
+    if (activeClaimCount > 0) {
+      return {
+        success: false,
+        error: `User memiliki ${activeClaimCount} klaim aktif. Selesaikan semua klaim terlebih dahulu.`,
+      };
+    }
+
+    // 1. Collect and delete storage files
+    const reportImages = await prisma.reportImage.findMany({
+      where: { report: { reporterId: userId } },
+    });
+    if (reportImages.length > 0) {
+      await supabaseAdmin.storage
+        .from("report-images")
+        .remove(reportImages.map((img) => img.fileName));
+    }
+
+    const claimImages = await prisma.claimImage.findMany({
+      where: { claim: { claimantId: userId } },
+    });
+    if (claimImages.length > 0) {
+      await supabaseAdmin.storage
+        .from("claim-images")
+        .remove(claimImages.map((img) => img.fileName));
+    }
+
+    const foundMatchImages = await prisma.foundMatchImage.findMany({
+      where: { foundMatch: { finderId: userId } },
+    });
+    if (foundMatchImages.length > 0) {
+      await supabaseAdmin.storage
+        .from("found-match-images")
+        .remove(foundMatchImages.map((img) => img.fileName));
+    }
+
+    // 2. Cascade delete all user data
+    await prisma.$transaction(async (tx) => {
+      await tx.comment.deleteMany({ where: { authorId: userId } });
+      await tx.notification.deleteMany({ where: { userId } });
+      await tx.passwordResetRequest.deleteMany({ where: { userId } });
+      await tx.foundMatchImage.deleteMany({ where: { foundMatch: { finderId: userId } } });
+      await tx.foundMatch.deleteMany({ where: { finderId: userId } });
+      await tx.claimImage.deleteMany({ where: { claim: { claimantId: userId } } });
+      await tx.claim.deleteMany({ where: { claimantId: userId } });
+      await tx.reportImage.deleteMany({ where: { report: { reporterId: userId } } });
+      await tx.report.deleteMany({ where: { reporterId: userId } });
+      await tx.profile.delete({ where: { id: userId } });
+
+      await tx.auditLog.create({
+        data: {
+          action: "USER_DELETED",
+          actorId: adminUser.id,
+          targetType: "User",
+          targetId: userId,
+          detail: `Admin '${adminProfile.name}' menghapus akun '${targetProfile.name}' (${targetProfile.email}, ${targetProfile.role}).`,
+        },
+      });
+    });
+
+    // 3. Delete from Supabase Auth
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authError) {
+      console.error("Failed to delete Supabase auth user:", authError.message);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("adminDeleteUser error:", error);
+    return { success: false, error: "Gagal menghapus user." };
+  }
+}

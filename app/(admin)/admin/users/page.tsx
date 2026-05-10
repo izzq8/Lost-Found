@@ -8,7 +8,7 @@ import AdminUsersClient from "./_components/admin-users-client";
 export const metadata = { title: "Manajemen Pengguna — LostFound SMKFN" };
 
 export default async function AdminUsersPage() {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   const users = await prisma.profile.findMany({
     orderBy: { createdAt: "desc" },
@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
         badge={`${users.length} user`}
       />
 
-      <AdminUsersClient users={serialized} counts={counts} />
+      <AdminUsersClient users={serialized} counts={counts} currentUserId={user.id} />
     </div>
   );
 }

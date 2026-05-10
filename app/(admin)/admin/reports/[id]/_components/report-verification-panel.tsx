@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search, Trash2 } from "lucide-react";
 import { verifyReport, rejectReport } from "@/lib/actions/report.actions";
+import { adminDeleteReport } from "@/lib/actions/admin.actions";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 interface ClaimInfo {
@@ -40,6 +41,8 @@ export default function ReportVerificationPanel({
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const checklistItems = [
     "Data lengkap",
@@ -77,6 +80,19 @@ export default function ReportVerificationPanel({
       setError(result.error || "Gagal menolak");
     }
     setLoading(false);
+  };
+
+  const handleDelete = async () => {
+    setDeleteLoading(true);
+    setError(null);
+    const result = await adminDeleteReport(reportId);
+    if (result.success) {
+      router.push("/admin/reports");
+    } else {
+      setError(result.error || "Gagal menghapus");
+      setConfirmDelete(false);
+    }
+    setDeleteLoading(false);
   };
 
   // ── PENDING → Verification Panel ─────────────────────────────────────
@@ -143,6 +159,37 @@ export default function ReportVerificationPanel({
                   className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : "Konfirmasi"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Admin Delete */}
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors cursor-pointer"
+            >
+              <Trash2 size={14} /> Hapus Laporan
+            </button>
+          ) : (
+            <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex flex-col gap-2">
+              <p className="text-xs text-red-700 font-medium">Hapus laporan ini secara permanen?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-white transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="flex-1 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {deleteLoading ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Hapus"}
                 </button>
               </div>
             </div>
@@ -249,12 +296,50 @@ export default function ReportVerificationPanel({
     );
   }
 
-  // ── Other statuses ────────────────────────────────────────────────────
+  // ── Other statuses (REJECTED, EXPIRED, RESOLVED, etc) ──────────────────
+  const canDelete = reportStatus === "REJECTED";
+
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
       <div className="p-4 rounded-xl bg-slate-50 text-center">
         <p className="text-xs text-slate-500">Status: <StatusBadge status={reportStatus} /></p>
       </div>
+
+      {error && (
+        <div className="mt-3 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">{error}</div>
+      )}
+
+      {canDelete && (
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors cursor-pointer"
+            >
+              <Trash2 size={14} /> Hapus Laporan
+            </button>
+          ) : (
+            <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex flex-col gap-2">
+              <p className="text-xs text-red-700 font-medium">Hapus laporan ini secara permanen?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-white transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="flex-1 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {deleteLoading ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Hapus"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, Package, Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 interface FoundMatchItem {
   id: string;
@@ -31,8 +33,15 @@ const tabLabels: Record<string, string> = {
 };
 
 export default function AdminFoundMatchesClient({ matches, pendingCount }: { matches: FoundMatchItem[]; pendingCount: number }) {
+  const router = useRouter();
   const [tab, setTab] = useState("Semua");
   const [search, setSearch] = useState("");
+
+  useRealtimeRefresh({
+    tables: ["found_matches"],
+    onEvent: () => router.refresh(),
+    debounceMs: 1500,
+  });
 
   const filtered = matches
     .filter((m) => tab === "Semua" || m.status === tab)

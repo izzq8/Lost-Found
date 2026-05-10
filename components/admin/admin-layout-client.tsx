@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { markAllNotificationsAsRead, getRecentNotifications } from "@/lib/actions/notification.actions";
 import { getNotificationHref } from "@/lib/utils/notification-href";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 // ── SIDEBAR MENU DEFINITION ──────────────────────────────────────────────────
 const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: number }) => [
@@ -98,6 +99,14 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // ── REALTIME SUBSCRIPTIONS ──────────────────────────────────────────────
+  useRealtimeRefresh({
+    tables: ["reports", "claims", "found_matches", "notifications"],
+    onEvent: () => router.refresh(),
+    debounceMs: 1500,
+    notificationUserId: currentUser.id,
+  });
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
