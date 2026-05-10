@@ -5,7 +5,7 @@ import { loginAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ export default function LoginForm() {
   const [mounted, setMounted] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const [emailValue, setEmailValue] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -66,17 +67,28 @@ export default function LoginForm() {
         <Label htmlFor="password" className="text-slate-700 font-medium text-sm ml-1">
           Password
         </Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="Password Kamu..."
-          autoComplete="current-password"
-          className={cn(
-            "h-12 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 focus-visible:ring-orange-500 focus-visible:border-orange-500 transition-all rounded-xl",
-            state?.fieldErrors?.password && "border-red-500 focus-visible:ring-red-500"
-          )}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Password Kamu..."
+            autoComplete="current-password"
+            className={cn(
+              "w-full h-12 px-3 pr-11 bg-white/50 backdrop-blur-sm border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all rounded-xl text-sm",
+              state?.fieldErrors?.password && "border-red-500 focus:ring-red-500"
+            )}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
         {state?.fieldErrors?.password && (
           <p className="text-sm text-red-500 ml-1 mt-1">
             {state.fieldErrors.password[0]}
