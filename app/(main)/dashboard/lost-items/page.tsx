@@ -29,7 +29,6 @@ export default async function LostItemsPage() {
         icon={Package}
         title="Barang Hilang"
         subtitle={`${reports.length} laporan aktif`}
-        badge={`${reports.length}`}
       >
         <Link
           href="/dashboard/report/lost"
