@@ -7,7 +7,6 @@ interface PageHeroProps {
   variant?: 'large' | 'default' | 'compact';
   children?: React.ReactNode;
   badge?: string;
-  badgeColor?: string;
 }
 
 export function PageHero({
@@ -17,7 +16,6 @@ export function PageHero({
   variant = 'default',
   children,
   badge,
-  badgeColor = '#FB923C',
 }: PageHeroProps) {
 
   // Gunakan tailwind string class murni yang responsive
@@ -133,11 +131,11 @@ export function PageHero({
                     className="rounded-full px-2 py-0.5 md:px-2.5 md:py-0.5 shrink-0"
                     style={{
                       fontSize: '10px',
-                      fontWeight: 600,
-                      background: 'rgba(255,255,255,0.2)',
+                      fontWeight: 700,
+                      background: 'rgba(255,255,255,0.25)',
                       backdropFilter: 'blur(4px)',
-                      color: badgeColor,
-                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255,255,255,0.3)',
                     }}
                   >
                     {badge}

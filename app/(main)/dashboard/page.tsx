@@ -84,7 +84,7 @@ export default async function DashboardPage() {
       <PageHero
         variant="large"
         icon={LayoutDashboard}
-        title={`Selamat datang, ${profile.name.split(' ')[0]}! 👋`}
+        title={`Selamat datang, ${profile.name.split(' ')[0]}!`}
         subtitle={todayStr}
       />
 

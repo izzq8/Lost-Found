@@ -1,8 +1,9 @@
 import { requireAuth } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import { PageHero } from "@/components/shared/page-hero";
-import { User, Mail, ShieldAlert, KeyRound, CheckCircle2 } from "lucide-react";
-// import ProfileFormClient from "./_components/profile-form-client"; (WIP untuk edit)
+import { User, Mail, ShieldAlert, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import ChangePasswordForm from "./_components/change-password-form";
 
 export const metadata = {
   title: "Profil Saya — LostFound SMKFN",
@@ -13,6 +14,10 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+      <Link href="/dashboard" className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium">
+        <ArrowLeft size={16} /> Kembali ke Dashboard
+      </Link>
+
       <PageHero
         variant="compact"
         icon={User}
@@ -66,21 +71,11 @@ export default async function ProfilePage() {
              </div>
           </div>
 
-          <hr className="border-slate-200" />
-
-          {/* Fitur Ganti Password (WIP UI) */}
-          <div>
-            <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-              <KeyRound size={18} className="text-orange-500" /> Ganti Password
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">Untuk mengganti password, Anda akan membutuhkan form khusus di fase selanjutnya, atau Anda dapat menghubungi administrator.</p>
-            <button disabled className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-400 cursor-not-allowed inline-block shadow-sm">
-              Form Ganti Password (WIP)
-            </button>
-          </div>
-
         </div>
       </div>
+
+      {/* Keamanan Akun — separated section */}
+      <ChangePasswordForm />
     </div>
   );
 }
