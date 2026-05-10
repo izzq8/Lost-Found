@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { Search, ToggleLeft, ToggleRight, Loader2, Trash2 } from "lucide-react";
 import { deactivateUser, reactivateUser } from "@/lib/actions/user.actions";
+import { adminDeleteUser } from "@/lib/actions/admin.actions";
 
 interface UserItem {
   id: string;
@@ -19,14 +20,18 @@ interface UserItem {
 export default function AdminUsersClient({
   users,
   counts,
+  currentUserId,
 }: {
   users: UserItem[];
   counts: { active: number; inactive: number };
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"ACTIVE" | "DEACTIVATED">("ACTIVE");
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
 
   const filtered = users
     .filter((u) => u.status === tab)
@@ -49,6 +54,17 @@ export default function AdminUsersClient({
     }
     router.refresh();
     setLoadingId(null);
+  };
+
+  const handleDelete = async (userId: string) => {
+    setDeleteLoadingId(userId);
+    const result = await adminDeleteUser(userId);
+    if (!result.success) {
+      alert(result.error || "Gagal menghapus user.");
+    }
+    setDeleteConfirmId(null);
+    setDeleteLoadingId(null);
+    router.refresh();
   };
 
   return (
@@ -90,7 +106,7 @@ export default function AdminUsersClient({
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
-                {["#", "Nama", "Email", "Jabatan", "Role", "Tgl Daftar", "Aksi"].map((h) => (
+                {["#", "Nama", "Email", "Jabatan", "Role", "Tgl Daftar", "Status", "Hapus"].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider"
@@ -103,7 +119,7 @@ export default function AdminUsersClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
                     Tidak ada user yang sesuai filter.
                   </td>
                 </tr>
@@ -165,6 +181,35 @@ export default function AdminUsersClient({
                         </button>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      {u.id === currentUserId ? (
+                        <span className="text-[10px] text-slate-400">—</span>
+                      ) : deleteConfirmId === u.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDelete(u.id)}
+                            disabled={deleteLoadingId === u.id}
+                            className="px-2 py-1 rounded text-[10px] font-semibold bg-red-500 text-white hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                          >
+                            {deleteLoadingId === u.id ? <Loader2 size={12} className="animate-spin" /> : "Hapus"}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="px-2 py-1 rounded text-[10px] font-medium text-slate-500 hover:bg-slate-100 cursor-pointer"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirmId(u.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 cursor-pointer transition-colors"
+                          title="Hapus User"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
@@ -208,6 +253,33 @@ export default function AdminUsersClient({
                     <button onClick={() => handleToggle(u.id, u.status)} className="p-2 rounded-lg hover:bg-green-50 text-green-500 cursor-pointer" title="Aktifkan">
                       <ToggleLeft size={18} />
                     </button>
+                  )}
+                  {u.id !== currentUserId && (
+                    deleteConfirmId === u.id ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          disabled={deleteLoadingId === u.id}
+                          className="px-2 py-1 rounded text-[10px] font-semibold bg-red-500 text-white cursor-pointer disabled:opacity-50"
+                        >
+                          {deleteLoadingId === u.id ? <Loader2 size={12} className="animate-spin" /> : "Hapus"}
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-2 py-1 rounded text-[10px] text-slate-500 cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirmId(u.id)}
+                        className="p-2 rounded-lg hover:bg-red-50 text-red-400 cursor-pointer mt-1"
+                        title="Hapus User"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )
                   )}
                 </div>
               </div>

@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { markAllNotificationsAsRead, getRecentNotifications } from '@/lib/actions/notification.actions';
 import { getNotificationHref } from '@/lib/utils/notification-href';
+import { useRealtimeRefresh } from '@/hooks/use-realtime-refresh';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -65,6 +66,14 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
   }, []);
 
   useEffect(() => { setMobileOpen(false); setOpenDropdown(null); }, [pathname]);
+
+  // ── REALTIME SUBSCRIPTIONS ──────────────────────────────────────────────
+  useRealtimeRefresh({
+    tables: ["notifications", "reports", "claims"],
+    onEvent: () => router.refresh(),
+    debounceMs: 2000,
+    notificationUserId: currentUser.id,
+  });
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';

@@ -39,7 +39,9 @@ export async function middleware(request: NextRequest) {
   // 1. Public routes — redirect ke dashboard jika sudah login
   if (publicRoutes.some((r) => pathname.startsWith(r))) {
     if (user) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      const role = user.user_metadata?.role;
+      const target = role === "ADMIN" ? "/admin" : "/dashboard";
+      return NextResponse.redirect(new URL(target, request.url));
     }
     return response;
   }

@@ -20,8 +20,7 @@ export default async function MainLayout({
   }
 
   if (profile.role === "ADMIN") {
-    // Prevent admins from accessing the user dashboard if they meant to go to admin
-    // redirect("/admin/dashboard");
+    redirect("/admin");
   }
 
   // Parallel data fetching — all counts are independent

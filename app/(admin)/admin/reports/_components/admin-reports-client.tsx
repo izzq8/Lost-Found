@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, Package, Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 interface ReportItem {
   id: string;
@@ -31,8 +33,15 @@ const tabLabels: Record<string, string> = {
 };
 
 export default function AdminReportsClient({ reports, pendingCount }: { reports: ReportItem[]; pendingCount: number }) {
+  const router = useRouter();
   const [tab, setTab] = useState("Semua");
   const [search, setSearch] = useState("");
+
+  useRealtimeRefresh({
+    tables: ["reports"],
+    onEvent: () => router.refresh(),
+    debounceMs: 1500,
+  });
 
   const filtered = reports
     .filter((r) => tab === "Semua" || r.status === tab)
