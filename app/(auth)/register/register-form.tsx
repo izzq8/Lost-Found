@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useRef } from "react";
 import { registerAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,26 @@ export default function RegisterForm() {
   const [state, formAction, isPending] = useActionState(registerAction, {});
   const [mounted, setMounted] = useState(false);
 
+  // Preserve form values on failed submission
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
+  const [nameValue, setNameValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+  const [codeValue, setCodeValue] = useState("");
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Restore preserved values after failed submission (native form resets all fields)
+  useEffect(() => {
+    if (state?.error || state?.fieldErrors) {
+      if (nameRef.current) nameRef.current.value = nameValue;
+      if (emailRef.current) emailRef.current.value = emailValue;
+      if (codeRef.current) codeRef.current.value = codeValue;
+    }
+  }, [state, nameValue, emailValue, codeValue]);
 
   return (
     <form action={formAction} className="space-y-4 flex flex-col items-center">
@@ -31,10 +48,12 @@ export default function RegisterForm() {
           Nama Lengkap
         </Label>
         <Input
+          ref={nameRef}
           id="name"
           name="name"
           type="text"
-          placeholder="Ahmad Rizki"
+          placeholder="Ahmad Rizki Pratama"
+          onChange={(e) => setNameValue(e.target.value)}
           className={cn(
             "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl",
             state?.fieldErrors?.name && "border-red-500 focus-visible:ring-red-500"
@@ -51,10 +70,12 @@ export default function RegisterForm() {
           Email Sekolah
         </Label>
         <Input
+          ref={emailRef}
           id="email"
           name="email"
           type="email"
-          placeholder="nama@smkforwardnusantara.sch.id"
+          placeholder="nama@smkfn.sch.id"
+          onChange={(e) => setEmailValue(e.target.value)}
           className={cn(
             "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl",
             state?.fieldErrors?.email && "border-red-500 focus-visible:ring-red-500"
@@ -94,10 +115,12 @@ export default function RegisterForm() {
           <span className="text-[10px] text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full font-semibold">Wajib</span>
         </div>
         <Input
+          ref={codeRef}
           id="enrollmentCode"
           name="enrollmentCode"
           type="text"
           placeholder="Contoh: FWD-SISWA-XXXXXX"
+          onChange={(e) => setCodeValue(e.target.value)}
           className={cn(
             "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl uppercase",
             state?.fieldErrors?.enrollmentCode && "border-red-500 focus-visible:ring-red-500"

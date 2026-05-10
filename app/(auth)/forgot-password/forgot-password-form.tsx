@@ -54,7 +54,7 @@ export default function ForgotPasswordForm() {
           id="email"
           name="email"
           type="email"
-          placeholder="nama@smkforwardnusantara.sch.id"
+          placeholder="nama@smkfn.sch.id"
           autoComplete="email"
           className={cn(
             "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl",

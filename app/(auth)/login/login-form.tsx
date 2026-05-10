@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useRef } from "react";
 import { loginAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,19 @@ import { cn } from "@/lib/utils";
 export default function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginAction, {});
   const [mounted, setMounted] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const [emailValue, setEmailValue] = useState("");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Preserve email value after failed submission
+  useEffect(() => {
+    if (state?.error && emailRef.current) {
+      emailRef.current.value = emailValue;
+    }
+  }, [state, emailValue]);
 
   return (
     <form action={formAction} className="space-y-5 flex flex-col items-center">
@@ -34,11 +43,13 @@ export default function LoginForm() {
           Email
         </Label>
         <Input
+          ref={emailRef}
           id="email"
           name="email"
           type="email"
-          placeholder="nama@smkforwardnusantara.sch.id"
+          placeholder="Email Kamu..."
           autoComplete="email"
+          onChange={(e) => setEmailValue(e.target.value)}
           className={cn(
             "h-12 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 focus-visible:border-orange-500 transition-all rounded-xl",
             state?.fieldErrors?.email && "border-red-500 focus-visible:ring-red-500"
@@ -52,22 +63,14 @@ export default function LoginForm() {
       </div>
 
       <div className="space-y-2 w-full">
-        <div className="flex items-center justify-between ml-1">
-          <Label htmlFor="password" className="text-slate-700 font-medium text-sm">
-            Password
-          </Label>
-          <Link
-            href="/forgot-password"
-            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-medium"
-          >
-            Lupa Password?
-          </Link>
-        </div>
+        <Label htmlFor="password" className="text-slate-700 font-medium text-sm ml-1">
+          Password
+        </Label>
         <Input
           id="password"
           name="password"
           type="password"
-          placeholder="••••••••"
+          placeholder="Password Kamu..."
           autoComplete="current-password"
           className={cn(
             "h-12 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 focus-visible:ring-orange-500 focus-visible:border-orange-500 transition-all rounded-xl",
@@ -79,6 +82,15 @@ export default function LoginForm() {
             {state.fieldErrors.password[0]}
           </p>
         )}
+        {/* Lupa Password — di bawah field password */}
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-medium"
+          >
+            Lupa Password?
+          </Link>
+        </div>
       </div>
 
       <Button

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -198,9 +199,7 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
       >
         <div className="h-full max-w-[1440px] mx-auto flex items-center justify-between px-4 lg:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center">
-              <Search size={18} className="text-white" />
-            </div>
+            <Image src="/logo.png" alt="LostFound SMKFN Logo" width={36} height={36} className="shrink-0" />
             <span style={{ fontSize: '15px', fontWeight: 700, color: '#1E293B', whiteSpace: 'nowrap' }}>
               LostFound <span className="text-orange-500">SMKFN</span>
             </span>

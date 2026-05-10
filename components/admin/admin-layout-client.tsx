@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -140,9 +141,7 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-16 shrink-0 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center shrink-0">
-          <Search size={18} className="text-white" />
-        </div>
+        <Image src="/logo.png" alt="LostFound SMKFN Logo" width={36} height={36} className="shrink-0" />
         {(!collapsed || isMobile) && (
           <span className="text-[15px] font-bold text-slate-800 whitespace-nowrap">
             LostFound <span className="text-orange-500">SMKFN</span>
