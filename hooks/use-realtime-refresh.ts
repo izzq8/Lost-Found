@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+let channelCounter = 0;
+
 interface RealtimeRefreshOptions {
   /** Tables to subscribe to (e.g., ["reports", "claims"]) */
   tables: string[];
@@ -37,6 +39,7 @@ export function useRealtimeRefresh({
 
   useEffect(() => {
     const supabase = createClient();
+    const channelName = `rt-refresh-${++channelCounter}-${Date.now()}`;
 
     const debouncedCallback = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -45,11 +48,10 @@ export function useRealtimeRefresh({
       }, debounceMs);
     };
 
-    let channel = supabase.channel("realtime-refresh");
+    let channel = supabase.channel(channelName);
 
     for (const table of tables) {
       if (table === "notifications" && notificationUserId) {
-        // Filter notifications to only this user's notifications
         channel = channel.on(
           "postgres_changes",
           {
@@ -61,7 +63,6 @@ export function useRealtimeRefresh({
           debouncedCallback
         );
       } else {
-        // Subscribe to all changes on the table (INSERT, UPDATE, DELETE)
         channel = channel.on(
           "postgres_changes",
           {
