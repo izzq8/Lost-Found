@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import RegisterForm from "./register-form";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Daftar Akun",
@@ -14,9 +15,7 @@ export default function RegisterPage() {
       {/* Brand Logo Lockup */}
       <div className="flex justify-center mb-8">
         <div className="flex items-center gap-2">
-          <div className="bg-orange-500 rounded p-1.5 flex items-center justify-center">
-            <Search className="w-5 h-5 text-white" strokeWidth={3} />
-          </div>
+          <Image src="/logo.png" alt="LostFound SMKFN Logo" width={32} height={32} className="shrink-0" />
           <h1 className="text-xl font-bold tracking-tight text-slate-800">
             LostFound <span className="text-orange-500 font-extrabold">SMKFN</span>
           </h1>
@@ -48,7 +47,7 @@ export default function RegisterPage() {
 
       {/* Footer */}
       <p className="text-center text-slate-400 text-xs mt-8">
-        © 2026 SMK Fn. Hak Cipta Dilindungi.
+        © 2026 SMK Forward Nusantara. Hak Cipta Dilindungi.
       </p>
     </div>
   );

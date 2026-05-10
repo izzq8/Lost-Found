@@ -122,24 +122,41 @@ async function main() {
       imageUrl: "/images/categories/elektronik.png",
     },
     {
-      name: "Alat Tulis",
-      imageUrl: "/images/categories/alat-tulis.png",
-    },
-    { name: "Pakaian", imageUrl: "/images/categories/pakaian.png" },
-    { name: "Dokumen", imageUrl: "/images/categories/dokumen.png" },
-    {
-      name: "Aksesoris",
-      imageUrl: "/images/categories/aksesoris.png",
+      name: "Tas & Dompet",
+      imageUrl: "/images/categories/tas-dompet.png",
     },
     {
-      name: "Uang / Dompet",
-      imageUrl: "/images/categories/uang-dompet.png",
+      name: "Pakaian & Aksesoris",
+      imageUrl: "/images/categories/pakaian-aksesoris.png",
     },
     {
-      name: "Tas / Ransel",
-      imageUrl: "/images/categories/tas-ransel.png",
+      name: "Alat Tulis & Buku",
+      imageUrl: "/images/categories/alat-tulis-buku.png",
     },
-    { name: "Lainnya", imageUrl: "/images/categories/lainnya.png" },
+    {
+      name: "Kartu & Identitas",
+      imageUrl: "/images/categories/kartu-identitas.png",
+    },
+    {
+      name: "Botol & Tempat Makan",
+      imageUrl: "/images/categories/botol-makan.png",
+    },
+    {
+      name: "Kunci",
+      imageUrl: "/images/categories/kunci.png",
+    },
+    {
+      name: "Perlengkapan Olahraga",
+      imageUrl: "/images/categories/olahraga.png",
+    },
+    {
+      name: "Perhiasan & Barang Berharga",
+      imageUrl: "/images/categories/perhiasan.png",
+    },
+    {
+      name: "Lainnya",
+      imageUrl: "/images/categories/lainnya.png",
+    },
   ];
 
   for (const cat of categories) {
@@ -169,7 +186,7 @@ async function main() {
     });
     demoSiswaId = authSiswa.user!.id;
   }
-  
+
   await prisma.profile.upsert({
     where: { id: demoSiswaId },
     create: {
@@ -201,7 +218,7 @@ async function main() {
     const kElektronik = await prisma.category.findUnique({ where: { name: "Elektronik" } });
     const kDompet = await prisma.category.findUnique({ where: { name: "Uang / Dompet" } });
     const kAlatTulis = await prisma.category.findUnique({ where: { name: "Alat Tulis" } });
-    
+
     if (kElektronik && kDompet && kAlatTulis) {
       await prisma.report.createMany({
         data: [

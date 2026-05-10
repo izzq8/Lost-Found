@@ -168,6 +168,11 @@ model Report {
   comments Comment[]
   foundMatches FoundMatch[]
 
+  @@index([type, status])
+  @@index([reporterId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([type, status, createdAt])
   @@map("reports")
 }
 
@@ -181,6 +186,7 @@ model ReportImage {
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
+  @@index([reportId])
   @@map("report_images")
 }
 
@@ -207,6 +213,10 @@ model Claim {
   images   ClaimImage[]
   comments Comment[]
 
+  @@index([reportId])
+  @@index([claimantId])
+  @@index([status])
+  @@index([claimantId, status])
   @@map("claims")
 }
 
@@ -220,6 +230,7 @@ model ClaimImage {
 
   claim Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
+  @@index([claimId])
   @@map("claim_images")
 }
 
@@ -236,6 +247,8 @@ model Comment {
   report Report? @relation(fields: [reportId], references: [id], onDelete: Cascade)
   claim  Claim?  @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
+  @@index([reportId])
+  @@index([claimId])
   @@map("comments")
 }
 
@@ -269,6 +282,7 @@ model Announcement {
 
   creator Profile @relation("AnnouncementCreator", fields: [createdBy], references: [id])
 
+  @@index([publishAt, expiredAt])
   @@map("announcements")
 }
 
@@ -301,6 +315,8 @@ model PasswordResetRequest {
   user      Profile  @relation("PasswordRequester", fields: [userId], references: [id])
   processor Profile? @relation("PasswordResetProcessor", fields: [processedBy], references: [id])
 
+  @@index([userId])
+  @@index([status])
   @@map("password_reset_requests")
 }
 
@@ -326,6 +342,9 @@ model FoundMatch {
   finder Profile @relation("FoundMatches", fields: [finderId], references: [id])
   images FoundMatchImage[]
 
+  @@index([reportId])
+  @@index([finderId])
+  @@index([status])
   @@map("found_matches")
 }
 

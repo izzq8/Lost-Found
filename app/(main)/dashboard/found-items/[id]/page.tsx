@@ -38,28 +38,30 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
   const hasImages = report.images.length > 0;
   const mainImageUrl = canSeeRealPhoto && hasImages ? report.images[0].url : null;
 
-  // Cek hak untuk mengklaim
+  // Parallel: check claim eligibility + user's own claim at the same time
   let userCanClaim = false;
-  if (!isOwner && report.status === "VERIFIED") {
-    // Check if ANY claim is already approved/completed for this report
-    const approvedClaim = await prisma.claim.findFirst({
-      where: { reportId: id, status: { in: ["APPROVED", "COMPLETED"] } },
-    });
-    if (!approvedClaim) {
-      // No approved claim yet — check if THIS user already has a pending claim
-      const existingClaim = await prisma.claim.findFirst({
-        where: { reportId: id, claimantId: user.id, status: { in: ["PENDING", "APPROVED"] } },
-      });
-      if (!existingClaim) userCanClaim = true;
-    }
-  }
 
-  // Cek user's claim (all statuses — for badges + claim comment section)
-  const userClaim = await prisma.claim.findFirst({
-    where: { reportId: id, claimantId: user.id },
-    select: { id: true, status: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [approvedClaim, userClaim] = await Promise.all([
+    // Check if ANY claim is already approved/completed for this report
+    (!isOwner && report.status === "VERIFIED")
+      ? prisma.claim.findFirst({
+          where: { reportId: id, status: { in: ["APPROVED", "COMPLETED"] } },
+        })
+      : Promise.resolve(null),
+    // Cek user's claim (all statuses — for badges + claim comment section)
+    prisma.claim.findFirst({
+      where: { reportId: id, claimantId: user.id },
+      select: { id: true, status: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  if (!isOwner && report.status === "VERIFIED" && !approvedClaim) {
+    const existingClaim = await prisma.claim.findFirst({
+      where: { reportId: id, claimantId: user.id, status: { in: ["PENDING", "APPROVED"] } },
+    });
+    if (!existingClaim) userCanClaim = true;
+  }
 
   // Load claim comments for user's claim (Task 6: claim discussion visibility)
   const userClaimWithComments = userClaim ? await prisma.claim.findUnique({

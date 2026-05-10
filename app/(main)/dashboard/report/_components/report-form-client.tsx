@@ -118,7 +118,13 @@ export default function ReportFormClient({
       if (result && result.success) {
         setShowSuccess(true);
       } else if (result && !result.success) {
-        setServerError(result.error ?? "Terjadi kesalahan.");
+        // Display server-side field errors if present (e.g. Zod validation failures)
+        if (result.fieldErrors) {
+          const messages = Object.values(result.fieldErrors).flat();
+          setServerError(messages.join(", ") || "Validasi gagal. Periksa kembali form Anda.");
+        } else {
+          setServerError(result.error ?? "Terjadi kesalahan.");
+        }
       }
     });
   };

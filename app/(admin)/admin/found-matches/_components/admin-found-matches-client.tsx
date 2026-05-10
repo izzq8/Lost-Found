@@ -78,7 +78,8 @@ export default function AdminFoundMatchesClient({ matches, pendingCount }: { mat
       </div>
 
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -139,6 +140,42 @@ export default function AdminFoundMatchesClient({ matches, pendingCount }: { mat
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-slate-400">
+              Tidak ada found match yang sesuai filter.
+            </div>
+          ) : (
+            filtered.map((m) => {
+              const thumbnailUrl = m.matchImageUrl || m.reportImageUrl || null;
+              const categoryImg = m.categoryImageUrl && (m.categoryImageUrl.startsWith("http://") || m.categoryImageUrl.startsWith("https://")) ? m.categoryImageUrl : null;
+              return (
+                <Link key={m.id} href={`/admin/found-matches/${m.id}`} className="flex items-center gap-3 p-4 hover:bg-orange-50/30 transition-colors">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
+                    {thumbnailUrl ? (
+                      <img src={thumbnailUrl} alt={m.itemName} className="w-full h-full object-cover" />
+                    ) : categoryImg ? (
+                      <img src={categoryImg} alt={m.category} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package size={20} className="text-slate-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{m.itemName}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                      <span>{m.finderName}</span>
+                      <span>→</span>
+                      <span>{m.ownerName}</span>
+                    </div>
+                  </div>
+                  <StatusBadge status={m.status} />
+                </Link>
+              );
+            })
+          )}
         </div>
       </div>
     </>

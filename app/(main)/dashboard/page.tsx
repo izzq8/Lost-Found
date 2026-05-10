@@ -16,60 +16,65 @@ export default async function DashboardPage() {
 
   if (!profile) return null;
 
-  // 1. Ambil data pengumuman aktif terbaru
-  let activeAnnouncement = await prisma.announcement.findFirst({
-    where: {
-      publishAt: { lte: new Date() },
-      OR: [
-        { expiredAt: { gt: new Date() } },
-        { expiredAt: new Date("2099-12-31") } // Aturan safe fallback
-      ]
-    },
-    orderBy: { publishAt: "desc" }
-  });
-
-  // 2. Aggregate statistik dari Report / Claim
-  const statLost = await prisma.report.count({
-    where: { type: "LOST", status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] } }
-  });
-  
-  const statFound = await prisma.report.count({
-    where: { type: "FOUND", status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] } }
-  });
-
-  const statClaimedThisMonth = await prisma.report.count({
-    where: { 
-      status: "CLAIMED",
-      updatedAt: {
-        gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  // Parallel data fetching — all queries are independent
+  const [
+    activeAnnouncement,
+    statLost,
+    statFound,
+    statClaimedThisMonth,
+    statMyActiveReports,
+    recentLost,
+    recentFound,
+  ] = await Promise.all([
+    // 1. Pengumuman aktif terbaru
+    prisma.announcement.findFirst({
+      where: {
+        publishAt: { lte: new Date() },
+        OR: [
+          { expiredAt: { gt: new Date() } },
+          { expiredAt: new Date("2099-12-31") }
+        ]
+      },
+      orderBy: { publishAt: "desc" }
+    }),
+    // 2. Statistik
+    prisma.report.count({
+      where: { type: "LOST", status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] } }
+    }),
+    prisma.report.count({
+      where: { type: "FOUND", status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] } }
+    }),
+    prisma.report.count({
+      where: { 
+        status: "CLAIMED",
+        updatedAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
       }
-    }
-  });
-
-  const statMyActiveReports = await prisma.report.count({
-    where: {
-      reporterId: user.id,
-      status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] }
-    }
-  });
-
-  // 3. Tarik recent reports
-  const recentLost = await prisma.report.findMany({
-    where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
-    orderBy: { createdAt: "desc" },
-    take: 4,
-    include: {
-      category: true,
-      images: { take: 1, orderBy: { createdAt: "asc" } },
-    }
-  });
-
-  const recentFound = await prisma.report.findMany({
-    where: { type: "FOUND", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
-    orderBy: { createdAt: "desc" },
-    take: 4,
-    include: { category: true }
-  });
+    }),
+    prisma.report.count({
+      where: {
+        reporterId: user.id,
+        status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] }
+      }
+    }),
+    // 3. Recent reports
+    prisma.report.findMany({
+      where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      include: {
+        category: true,
+        images: { take: 1, orderBy: { createdAt: "asc" } },
+      }
+    }),
+    prisma.report.findMany({
+      where: { type: "FOUND", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      include: { category: true }
+    }),
+  ]);
 
   const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 

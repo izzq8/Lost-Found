@@ -80,7 +80,8 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
 
       {/* Table */}
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -100,7 +101,6 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
                 </tr>
               ) : (
                 filtered.map((r, i) => {
-                  // Admin can see the actual photo; fallback to category image
                   const thumbnailUrl = r.imageUrl || null;
                   const categoryImg = r.categoryImageUrl && (r.categoryImageUrl.startsWith("http://") || r.categoryImageUrl.startsWith("https://")) ? r.categoryImageUrl : null;
 
@@ -153,6 +153,47 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-slate-400">
+              Tidak ada laporan yang sesuai filter.
+            </div>
+          ) : (
+            filtered.map((r) => {
+              const thumbnailUrl = r.imageUrl || null;
+              const categoryImg = r.categoryImageUrl && (r.categoryImageUrl.startsWith("http://") || r.categoryImageUrl.startsWith("https://")) ? r.categoryImageUrl : null;
+              return (
+                <Link key={r.id} href={`/admin/reports/${r.id}`} className="flex items-center gap-3 p-4 hover:bg-orange-50/30 transition-colors">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
+                    {thumbnailUrl ? (
+                      <img src={thumbnailUrl} alt={r.itemName} className="w-full h-full object-cover" />
+                    ) : categoryImg ? (
+                      <img src={categoryImg} alt={r.category} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package size={20} className="text-slate-300" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-slate-800 truncate">{r.itemName}</span>
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${r.type === "LOST" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+                        {r.type === "LOST" ? "Hilang" : "Ditemukan"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>{r.reporterName}</span>
+                      <span>·</span>
+                      <span>{new Date(r.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                    </div>
+                  </div>
+                  <StatusBadge status={r.status} />
+                </Link>
+              );
+            })
+          )}
         </div>
       </div>
     </>

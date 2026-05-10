@@ -22,7 +22,11 @@ const tabs = [
   { icon: FileText, label: "Riwayat", href: "/dashboard/my-reports" },
 ];
 
-export default function MobileBottomNav() {
+interface MobileBottomNavProps {
+  actionableClaimsCount?: number;
+}
+
+export default function MobileBottomNav({ actionableClaimsCount = 0 }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [showLaporSheet, setShowLaporSheet] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -185,7 +189,7 @@ export default function MobileBottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 min-w-[52px] transition-colors"
+                className="relative flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 min-w-[52px] transition-colors"
               >
                 <tab.icon
                   size={20}
@@ -205,6 +209,11 @@ export default function MobileBottomNav() {
                   <div
                     className="w-1 h-1 rounded-full bg-orange-500"
                     style={{ marginTop: "-1px" }}
+                  />
+                )}
+                {tab.href === "/dashboard/my-reports" && actionableClaimsCount > 0 && !active && (
+                  <div
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white"
                   />
                 )}
               </Link>

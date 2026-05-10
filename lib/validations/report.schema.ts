@@ -34,23 +34,6 @@ export const reportSchema = z.object({
     .regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid (HH:MM)")
     .optional()
     .or(z.literal("")),
-}).superRefine((data, ctx) => {
-  // Cross-field: if date is today and time is provided, time must not be in the future
-  if (data.time && data.time !== "" && data.date) {
-    const today = new Date().toISOString().split("T")[0];
-    const inputDate = new Date(data.date).toISOString().split("T")[0];
-    if (inputDate === today) {
-      const now = new Date();
-      const [h, m] = data.time.split(":").map(Number);
-      if (h > now.getHours() || (h === now.getHours() && m > now.getMinutes())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Waktu tidak boleh di masa depan",
-          path: ["time"],
-        });
-      }
-    }
-  }
 });
 
 export type ReportFormValues = z.infer<typeof reportSchema>;
@@ -121,22 +104,6 @@ export const guestReportSchema = z.object({
     .min(8, "No. HP minimal 8 digit")
     .max(20, "No. HP maksimal 20 digit")
     .trim(),
-}).superRefine((data, ctx) => {
-  if (data.time && data.time !== "" && data.date) {
-    const today = new Date().toISOString().split("T")[0];
-    const inputDate = new Date(data.date).toISOString().split("T")[0];
-    if (inputDate === today) {
-      const now = new Date();
-      const [h, m] = data.time.split(":").map(Number);
-      if (h > now.getHours() || (h === now.getHours() && m > now.getMinutes())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Waktu tidak boleh di masa depan",
-          path: ["time"],
-        });
-      }
-    }
-  }
 });
 
 export type GuestReportFormValues = z.infer<typeof guestReportSchema>;

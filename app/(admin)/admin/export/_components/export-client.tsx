@@ -211,7 +211,9 @@ export default function ExportClient() {
               <p className="text-sm text-slate-400">Tidak ada data yang cocok dengan filter.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Desktop Preview Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -252,6 +254,35 @@ export default function ExportClient() {
                 </div>
               )}
             </div>
+
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y divide-slate-50">
+              {reports.slice(0, 50).map((r, i) => (
+                <div key={r.id} className="flex items-center gap-3 p-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-slate-800 truncate">{r.itemName}</span>
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${r.type === "LOST" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
+                        {TYPE_LABELS[r.type] || r.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>{r.reporterName}</span>
+                      <span>·</span>
+                      <span>{r.date}</span>
+                      <span>·</span>
+                      <span>{STATUS_LABELS[r.status] || r.status}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {reports.length > 50 && (
+                <div className="px-5 py-3 text-center text-xs text-slate-400">
+                  Menampilkan 50 dari {reports.length} laporan. Semua data akan diekspor.
+                </div>
+              )}
+            </div>
+            </>
           )}
         </div>
       )}

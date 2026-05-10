@@ -60,7 +60,8 @@ export default function PasswordRequestsClient({ requests }: { requests: Request
     <>
       {/* Table */}
       <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
@@ -123,6 +124,52 @@ export default function PasswordRequestsClient({ requests }: { requests: Request
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {requests.length === 0 ? (
+            <div className="px-4 py-12 text-center text-sm text-slate-400">
+              Belum ada permintaan reset password.
+            </div>
+          ) : (
+            requests.map((pr) => (
+              <div key={pr.id} className="flex items-center gap-3 p-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
+                  style={{ background: "#FFEDD5", color: "#C2410C" }}
+                >
+                  {pr.userName.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-800 truncate">{pr.userName}</span>
+                    <StatusBadge status={pr.status} />
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">{pr.userEmail}</p>
+                  <p className="text-xs text-slate-400">
+                    {new Date(pr.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  {pr.status === "PENDING" ? (
+                    <button
+                      onClick={() => {
+                        setModalId(pr.id);
+                        setGeneratedPwd("");
+                        setError(null);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">Selesai</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

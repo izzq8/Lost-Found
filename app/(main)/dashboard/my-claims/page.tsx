@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import { PageHero } from "@/components/shared/page-hero";
-import { ShieldCheck, FileText, Calendar, Info, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, FileText, Calendar, Info, ArrowRight, CheckCircle2, Package } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/shared/status-badge";
 
@@ -19,7 +19,7 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
     orderBy: { createdAt: "desc" },
     include: {
       report: {
-        include: { category: true }
+        include: { category: true, images: { take: 1, select: { url: true } } }
       }
     }
   });
@@ -34,6 +34,16 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
         title="Riwayat Klaim Saya"
         subtitle={`${claims.length} klaim diajukan · ${activeClaimsCount} sedang diproses`}
       />
+
+      {/* Tab Navigation */}
+      <div className="flex bg-slate-100/70 p-1 rounded-xl w-fit border border-slate-200/50">
+        <Link href="/dashboard/my-reports" className="px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 transition-colors">
+          Laporan Saya
+        </Link>
+        <Link href="/dashboard/my-claims" className="px-5 py-2 text-sm font-semibold rounded-lg bg-white text-orange-600 shadow-sm border border-slate-200/60">
+          Klaim Saya
+        </Link>
+      </div>
 
       {params.success && (
         <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
@@ -56,50 +66,77 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
       ) : (
         <div className="flex flex-col gap-4">
           {claims.map((claim) => (
-            <div key={claim.id} className="rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all">
-              <div className="p-4 border-b border-slate-50 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm">{claim.report.itemName}</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">{claim.report.category.name}</p>
-                  </div>
-                </div>
-                <StatusBadge status={claim.status} className="shrink-0" />
+            <Link
+              key={claim.id}
+              href={`/dashboard/found-items/${claim.reportId}`}
+              className="rounded-xl md:rounded-2xl p-4 flex gap-4 items-start transition-all hover:shadow-md cursor-pointer group"
+              style={{
+                background: "rgba(255,255,255,0.5)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.7)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
+              {/* Thumbnail */}
+              <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center relative">
+                <div className={`absolute top-0 left-0 w-full h-0.5 ${claim.status === "APPROVED" ? "bg-green-500" : claim.status === "REJECTED" ? "bg-red-500" : "bg-orange-500"}`} />
+                {claim.report.images.length > 0 ? (
+                  <img src={claim.report.images[0].url} alt="" className={`w-full h-full object-cover ${claim.status === "PENDING" || claim.status === "REJECTED" ? "blur-sm" : ""}`} />
+                ) : claim.report.category.imageUrl && claim.report.category.imageUrl.startsWith("http") ? (
+                  <img src={claim.report.category.imageUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Package size={24} className="text-slate-300" />
+                )}
               </div>
 
-              <div className="p-4 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Calendar size={13} />
-                    <span className="text-xs font-medium">
-                      Diajukan: {new Date(claim.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-orange-600">
+                      Klaim Diajukan
+                    </span>
+                    <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors">
+                      {claim.report.itemName}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={claim.status} className="shrink-0" />
+                    <ArrowRight size={14} className="text-slate-300 group-hover:text-orange-500 transition-colors hidden sm:block" />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                  <div className="flex items-center gap-1 text-slate-500">
+                    <Package size={11} className="text-slate-400" />
+                    <span className="text-[11px]">{claim.report.category.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-500">
+                    <Calendar size={11} className="text-slate-400" />
+                    <span className="text-[11px]">
+                      Diajukan: {new Date(claim.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </span>
                   </div>
-                  {claim.rejectionReason && claim.status === "REJECTED" && (
-                     <div className="flex items-start gap-2 text-red-500 mt-1 bg-red-50 p-2 rounded-lg text-xs">
-                       <Info size={13} className="mt-0.5 shrink-0" />
-                       <span className="font-medium">Ditolak: {claim.rejectionReason}</span>
-                     </div>
-                  )}
-                  {claim.status === "APPROVED" && (
-                    <div className="flex items-start gap-2 text-green-600 mt-1 bg-green-50 p-2 rounded-lg text-xs font-medium">
-                      <Info size={13} className="mt-0.5 shrink-0" />
-                      Silakan ambil barang di Front Office.
-                    </div>
-                  )}
                 </div>
-                
-                <Link 
-                  href={`/dashboard/found-items/${claim.reportId}`} 
-                  className="px-4 py-2 shrink-0 bg-white border border-slate-200 shadow-sm rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-center"
-                >
-                  Lihat Info & Diskusi
-                </Link>
+
+                {claim.rejectionReason && claim.status === "REJECTED" && (
+                   <div className="flex items-start gap-2 text-red-500 mt-2 bg-red-50/50 border border-red-100 p-2 rounded-lg text-xs">
+                     <Info size={13} className="mt-0.5 shrink-0" />
+                     <span className="font-medium">Ditolak: {claim.rejectionReason}</span>
+                   </div>
+                )}
+                {claim.status === "APPROVED" && (
+                  <div className="flex items-start gap-2 text-green-600 mt-2 bg-green-50/50 border border-green-100 p-2 rounded-lg text-xs font-medium">
+                    <Info size={13} className="mt-0.5 shrink-0" />
+                    Silakan ambil barang di Front Office.
+                  </div>
+                )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
