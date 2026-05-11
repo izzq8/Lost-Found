@@ -96,15 +96,15 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-orange-600">
                       Klaim Diajukan
                     </span>
-                    <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors">
+                    <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors truncate">
                       {claim.report.itemName}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center items-end gap-2 shrink-0">
                     <StatusBadge status={claim.status} className="shrink-0" />
                     {claim.status === "PENDING" && (
                       <CancelClaimButton claimId={claim.id} itemName={claim.report.itemName} />

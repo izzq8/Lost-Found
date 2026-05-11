@@ -134,7 +134,7 @@ export default async function MyReportsPage({
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wide ${
                           report.type === "LOST" ? "text-red-500" : "text-green-600"
@@ -142,11 +142,11 @@ export default async function MyReportsPage({
                       >
                         {report.type === "LOST" ? "Hilang" : "Ditemukan"}
                       </span>
-                      <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors">
+                      <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors truncate">
                         {report.itemName}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col items-end gap-2 shrink-0">
                       <StatusBadge status={report.status} className="shrink-0" />
                       {report.status === "AWAITING_PICKUP" && (
                         <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold animate-pulse">
