@@ -217,10 +217,7 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map(item => <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />)}
             <DropdownMenu id="lapor" label="Lapor" items={laporItems} />
-            <DropdownMenu id="riwayat" label="Riwayat" items={[
-              { icon: FileText, label: 'Riwayat Laporan', href: '/dashboard/my-reports', badge: actionableReportsCount },
-              { icon: ClipboardList, label: 'Riwayat Klaim', href: '/dashboard/my-claims', badge: actionableClaimsCount },
-            ]} badge={(actionableReportsCount + actionableClaimsCount) || 0} />
+            <NavLink href="/dashboard/my-reports" label="Riwayat" icon={FileText} />
           </nav>
 
           <div className="flex items-center gap-2">

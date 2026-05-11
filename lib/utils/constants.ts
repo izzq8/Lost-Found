@@ -2,7 +2,7 @@
 // Nilai ini berdasarkan aturan bisnis di 2.Flow-and-Feature.md
 
 // === Batasan Kuantitatif ===
-export const MAX_ACTIVE_REPORTS_PER_USER = 3;
+export const MAX_DAILY_REPORTS = 4;
 export const REPORT_EXPIRY_DAYS = 30;
 export const REPORT_PRE_EXPIRY_WARNING_DAYS = 5;
 

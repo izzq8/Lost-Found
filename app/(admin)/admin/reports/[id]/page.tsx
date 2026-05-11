@@ -132,6 +132,7 @@ export default async function AdminReportDetailPage({ params }: { params: Promis
             reportId={report.id}
             currentUserId={user.id}
             currentUserRole={profile.role}
+            currentUserName={profile.name}
           />
         </div>
 
@@ -169,6 +170,32 @@ export default async function AdminReportDetailPage({ params }: { params: Promis
               </div>
             )}
           </div>
+
+          {/* Quick Link: Active Found Match */}
+          {report.type === "LOST" && report.foundMatches.length > 0 && (() => {
+            const activeMatch = report.foundMatches.find(fm => 
+              ["APPROVED", "ITEM_RECEIVED", "COMPLETED"].includes(fm.status)
+            ) || report.foundMatches[0];
+            return (
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-200 shadow-sm">
+                <h3 className="text-xs font-bold text-emerald-800 mb-2 flex items-center gap-1.5">
+                  🔗 Found Match Terkait
+                </h3>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-700 truncate">{activeMatch.finder.name}</p>
+                    <StatusBadge status={activeMatch.status} className="mt-1" />
+                  </div>
+                  <Link
+                    href={`/admin/found-matches/${activeMatch.id}`}
+                    className="shrink-0 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                  >
+                    Lihat Detail →
+                  </Link>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Verification / Claims Panel */}
           <ReportVerificationPanel

@@ -56,7 +56,7 @@ export const editReportLimitedSchema = z.object({
 export type EditReportLimitedValues = z.infer<typeof editReportLimitedSchema>;
 
 // Constants
-export const MAX_ACTIVE_REPORTS = 3;
+export const MAX_DAILY_REPORTS = 4;
 export const MAX_IMAGES = 3;
 export const MAX_IMAGE_SIZE_MB = 5;
 export const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;

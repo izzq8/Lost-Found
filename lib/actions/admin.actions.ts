@@ -510,6 +510,16 @@ export async function getFilteredReportsForExport(filters: {
       include: {
         category: { select: { name: true } },
         reporter: { select: { name: true, jabatan: true } },
+        foundMatches: {
+          where: { status: { in: ["APPROVED", "ITEM_RECEIVED", "COMPLETED"] } },
+          include: { finder: { select: { name: true } } },
+          take: 1,
+        },
+        claims: {
+          where: { status: { in: ["APPROVED", "COMPLETED"] } },
+          include: { claimant: { select: { name: true } } },
+          take: 1,
+        },
       },
       take: 1000,
     });
@@ -524,6 +534,10 @@ export async function getFilteredReportsForExport(filters: {
       description: r.description || "-",
       reporterName: r.reporter.name,
       reporterJabatan: r.reporter.jabatan,
+      finderName: r.foundMatches[0]?.finder?.name || "-",
+      claimantName: r.claims[0]?.claimant?.name || "-",
+      handoverPhotoUrl: r.foundMatches[0]?.handoverPhotoUrl || r.claims[0]?.handoverPhotoUrl || "-",
+      pickupPhotoUrl: r.foundMatches[0]?.pickupPhotoUrl || "-",
       date: r.date.toISOString().split("T")[0],
       createdAt: r.createdAt.toISOString().split("T")[0],
       updatedAt: r.updatedAt.toISOString().split("T")[0],

@@ -19,6 +19,10 @@ interface ReportRow {
   date: string;
   createdAt: string;
   updatedAt: string;
+  finderName: string;
+  claimantName: string;
+  handoverPhotoUrl: string;
+  pickupPhotoUrl: string;
 }
 
 const TYPE_LABELS: Record<string, string> = { LOST: "Kehilangan", FOUND: "Penemuan" };
@@ -51,17 +55,18 @@ export default function ExportClient() {
     try {
       const XLSX = await import("xlsx");
       const wsData = [
-        ["No", "Tipe", "Status", "Nama Barang", "Kategori", "Lokasi", "Deskripsi", "Pelapor", "Jabatan", "Tanggal", "Dibuat", "Terakhir Update"],
+        ["No", "Tipe", "Status", "Nama Barang", "Kategori", "Lokasi", "Deskripsi", "Pelapor", "Jabatan", "Penemu", "Pengklaim", "Foto Serah", "Foto Ambil", "Tanggal", "Dibuat", "Terakhir Update"],
         ...reports.map((r, i) => [
           i + 1, TYPE_LABELS[r.type] || r.type, STATUS_LABELS[r.status] || r.status,
           r.itemName, r.category, r.location, r.description,
           r.reporterName, r.reporterJabatan.replace("_", " "),
+          r.finderName, r.claimantName, r.handoverPhotoUrl, r.pickupPhotoUrl,
           r.date, r.createdAt, r.updatedAt,
         ]),
       ];
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-      ws["!cols"] = [{ wch: 4 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      ws["!cols"] = [{ wch: 4 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, ws, "Laporan");
       XLSX.writeFile(wb, `Laporan_LostFound_${new Date().toISOString().split("T")[0]}.xlsx`);
     } catch (e) {
@@ -94,7 +99,7 @@ export default function ExportClient() {
 
       autoTable(doc, {
         startY: filterInfo ? 32 : 26,
-        head: [["No", "Tipe", "Status", "Nama Barang", "Kategori", "Lokasi", "Pelapor", "Tanggal"]],
+        head: [["No", "Tipe", "Status", "Nama Barang", "Kategori", "Lokasi", "Pelapor", "Penemu", "Pengklaim", "Tanggal"]],
         body: reports.map((r, i) => [
           i + 1,
           TYPE_LABELS[r.type] || r.type,
@@ -103,6 +108,8 @@ export default function ExportClient() {
           r.category,
           r.location,
           r.reporterName,
+          r.finderName,
+          r.claimantName,
           r.date,
         ]),
         styles: { fontSize: 7, cellPadding: 2 },
@@ -224,6 +231,8 @@ export default function ExportClient() {
                     <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Kategori</th>
                     <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Lokasi</th>
                     <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Pelapor</th>
+                    <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Penemu</th>
+                    <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Pengklaim</th>
                     <th className="text-left py-2.5 px-4 font-semibold text-slate-500 text-xs uppercase">Tanggal</th>
                   </tr>
                 </thead>
@@ -243,6 +252,8 @@ export default function ExportClient() {
                       <td className="py-2.5 px-4 text-slate-500">{r.category}</td>
                       <td className="py-2.5 px-4 text-slate-500 max-w-[140px] truncate">{r.location}</td>
                       <td className="py-2.5 px-4 text-slate-600">{r.reporterName}</td>
+                      <td className="py-2.5 px-4 text-slate-500 text-xs">{r.finderName !== "-" ? r.finderName : ""}</td>
+                      <td className="py-2.5 px-4 text-slate-500 text-xs">{r.claimantName !== "-" ? r.claimantName : ""}</td>
                       <td className="py-2.5 px-4 text-slate-400 whitespace-nowrap">{r.date}</td>
                     </tr>
                   ))}

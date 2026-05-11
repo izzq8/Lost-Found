@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma/client";
 import { PageHero } from "@/components/shared/page-hero";
 import { StatCard } from "@/components/shared/stat-card";
 import { ItemCard } from "@/components/shared/item-card";
-import { LayoutDashboard, Package, Search, CheckCircle, FileText, Megaphone } from "lucide-react";
+import { LayoutDashboard, Package, Search, FileText, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -21,8 +21,7 @@ export default async function DashboardPage() {
     activeAnnouncement,
     statLost,
     statFound,
-    statClaimedThisMonth,
-    statMyActiveReports,
+    statMyReports,
     recentLost,
     recentFound,
   ] = await Promise.all([
@@ -45,17 +44,8 @@ export default async function DashboardPage() {
       where: { type: "FOUND", status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] } }
     }),
     prisma.report.count({
-      where: { 
-        status: "CLAIMED",
-        updatedAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-        }
-      }
-    }),
-    prisma.report.count({
       where: {
         reporterId: user.id,
-        status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] }
       }
     }),
     // 3. Recent reports
@@ -111,11 +101,10 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-3 gap-5">
         <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
         <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
-        <StatCard icon={CheckCircle} value={statClaimedThisMonth} label="Diklaim Bulan Ini" color="#FB923C" />
-        <StatCard icon={FileText} value={statMyActiveReports} label="Laporan Saya Aktif" color="#C2410C" />
+        <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
       </div>
 
       {/* Mobile Quick Actions - hanya tampil di mobile */}

@@ -164,10 +164,15 @@ export async function rejectFoundMatch(
 // ── CONFIRM ITEM RECEIVED ─────────────────────────────────────────────────────
 
 export async function confirmItemReceived(
-  foundMatchId: string
+  foundMatchId: string,
+  handoverPhotoUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { user, profile } = await requireAdmin();
+
+    if (!handoverPhotoUrl) {
+      return { success: false, error: "Foto penyerahan barang wajib diunggah." };
+    }
 
     const match = await prisma.foundMatch.findUnique({
       where: { id: foundMatchId },
@@ -184,7 +189,11 @@ export async function confirmItemReceived(
       // Update found match
       await tx.foundMatch.update({
         where: { id: foundMatchId },
-        data: { status: "ITEM_RECEIVED", itemReceivedAt: new Date() },
+        data: {
+          status: "ITEM_RECEIVED",
+          itemReceivedAt: new Date(),
+          handoverPhotoUrl,
+        },
       });
 
       // Update report to AWAITING_PICKUP
@@ -234,10 +243,15 @@ export async function confirmItemReceived(
 // ── COMPLETE FOUND MATCH ──────────────────────────────────────────────────────
 
 export async function completeFoundMatch(
-  foundMatchId: string
+  foundMatchId: string,
+  pickupPhotoUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { user, profile } = await requireAdmin();
+
+    if (!pickupPhotoUrl) {
+      return { success: false, error: "Foto pengambilan barang wajib diunggah." };
+    }
 
     const match = await prisma.foundMatch.findUnique({
       where: { id: foundMatchId },
@@ -254,7 +268,11 @@ export async function completeFoundMatch(
       // Complete found match
       await tx.foundMatch.update({
         where: { id: foundMatchId },
-        data: { status: "COMPLETED", completedAt: new Date() },
+        data: {
+          status: "COMPLETED",
+          completedAt: new Date(),
+          pickupPhotoUrl,
+        },
       });
 
       // Update report to CLAIMED

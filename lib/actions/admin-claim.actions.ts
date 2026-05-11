@@ -138,9 +138,13 @@ export async function rejectClaim(claimId: string, reason: string): Promise<{ su
 
 // ── COMPLETE CLAIM (SERAH TERIMA) ─────────────────────────────────────────────
 
-export async function completeClaim(claimId: string): Promise<{ success: boolean; error?: string }> {
+export async function completeClaim(claimId: string, handoverPhotoUrl: string): Promise<{ success: boolean; error?: string }> {
   try {
     const { user, profile } = await requireAdmin();
+
+    if (!handoverPhotoUrl) {
+      return { success: false, error: "Foto serah terima barang wajib diunggah." };
+    }
 
     const claim = await prisma.claim.findUnique({
       where: { id: claimId },
@@ -154,7 +158,7 @@ export async function completeClaim(claimId: string): Promise<{ success: boolean
       // Set claim COMPLETED
       await tx.claim.update({
         where: { id: claimId },
-        data: { status: "COMPLETED", completedAt: new Date() },
+        data: { status: "COMPLETED", completedAt: new Date(), handoverPhotoUrl },
       });
 
       // Set report CLAIMED

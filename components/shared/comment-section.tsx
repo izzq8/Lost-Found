@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Trash2, MessageSquare, Send, AlertTriangle } from "lucide-react";
@@ -19,18 +20,22 @@ type CommentType = {
 };
 
 export function CommentSection({
-  comments,
+  comments: initialComments,
   reportId,
   claimId,
   currentUserId,
   currentUserRole,
+  currentUserName,
 }: {
   comments: CommentType[];
   reportId?: string;
   claimId?: string;
   currentUserId: string;
   currentUserRole: string;
+  currentUserName?: string;
 }) {
+  const router = useRouter();
+  const [localComments, setLocalComments] = useState<CommentType[]>(initialComments);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +56,16 @@ export function CommentSection({
     if (!res.success) {
       setError(res.error || "Gagal memposting komentar.");
     } else {
+      // Optimistic update — add comment to local state immediately
+      setLocalComments(prev => [...prev, {
+        id: `temp-${Date.now()}`,
+        content,
+        createdAt: new Date(),
+        authorId: currentUserId,
+        author: { name: currentUserName || "Anda", jabatan: "", role: currentUserRole },
+      }]);
       setContent("");
-      window.location.reload(); // Refresh unruk update list (cara sederhana)
+      router.refresh(); // Soft refresh — no scroll reset
     }
     setIsSubmitting(false);
   }
@@ -63,7 +76,9 @@ export function CommentSection({
     if (!res.success) {
       alert(res.error || "Gagal menghapus komentar.");
     } else {
-      window.location.reload();
+      // Optimistic update — remove from local state immediately
+      setLocalComments(prev => prev.filter(c => c.id !== id));
+      router.refresh();
     }
   }
 
@@ -73,7 +88,7 @@ export function CommentSection({
         <MessageSquare size={18} className="text-orange-500" />
         <h3 className="font-bold text-slate-800 text-sm md:text-base">Diskusi</h3>
         <span className="ml-auto bg-orange-100 text-orange-700 py-0.5 px-2 rounded-full text-xs font-semibold">
-          {comments.length}
+          {localComments.length}
         </span>
       </div>
 
@@ -86,13 +101,13 @@ export function CommentSection({
       </div>
 
       <div className="flex-1 p-4 md:p-5 overflow-y-auto min-h-[300px] flex flex-col gap-4">
-        {comments.length === 0 ? (
+        {localComments.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 my-8">
             <MessageSquare size={32} className="opacity-20" />
             <p className="text-sm">Belum ada diskusi untuk item ini.</p>
           </div>
         ) : (
-          comments.map((comment) => {
+          localComments.map((comment) => {
             const isOwner = comment.authorId === currentUserId;
             const isAdmin = comment.author.role === "ADMIN";
             

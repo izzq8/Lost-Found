@@ -107,7 +107,7 @@ export default function ChangePasswordForm() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   tabIndex={-1}
                 >
-                  {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showCurrent ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function ChangePasswordForm() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   tabIndex={-1}
                 >
-                  {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showNew ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function ChangePasswordForm() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                   tabIndex={-1}
                 >
-                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showConfirm ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
               </div>
             </div>

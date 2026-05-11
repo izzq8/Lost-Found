@@ -121,8 +121,18 @@ export default function ReportActionsClient({
             </div>
           )}
 
-          {/* Terminal states */}
-          {["CLAIMED", "REJECTED", "EXPIRED", "RESOLVED", "AWAITING_PICKUP"].includes(reportStatus) && (
+          {/* AWAITING_PICKUP — Owner needs to pick up */}
+          {reportStatus === "AWAITING_PICKUP" && (
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200">
+              <p className="text-xs text-emerald-800 font-bold mb-1">🎉 Barang Anda Sudah Ditemukan!</p>
+              <p className="text-xs text-emerald-700 leading-relaxed">
+                Segera datang ke <strong>Front Office</strong> untuk mengambil barang Anda. Tunjukkan halaman ini sebagai referensi.
+              </p>
+            </div>
+          )}
+
+          {/* Terminal states (except AWAITING_PICKUP) */}
+          {["CLAIMED", "REJECTED", "EXPIRED", "RESOLVED"].includes(reportStatus) && (
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
               <p className="text-xs text-slate-500">
                 Tidak ada tindakan yang tersedia.

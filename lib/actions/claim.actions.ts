@@ -238,3 +238,65 @@ export async function submitClaim(
     return { success: false, error: "Gagal mengajukan klaim. Silakan coba lagi." };
   }
 }
+
+// ── SERVER ACTION: CANCEL CLAIM ───────────────────────────────────────────────
+
+export async function cancelClaim(
+  claimId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { user } = await requireAuth();
+
+    const claim = await prisma.claim.findUnique({
+      where: { id: claimId },
+      include: { report: { select: { itemName: true } } },
+    });
+
+    if (!claim) {
+      return { success: false, error: "Klaim tidak ditemukan." };
+    }
+
+    if (claim.claimantId !== user.id) {
+      return { success: false, error: "Anda tidak berhak membatalkan klaim ini." };
+    }
+
+    if (claim.status !== "PENDING") {
+      return { success: false, error: "Hanya klaim berstatus PENDING yang dapat dibatalkan." };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Delete claim images from storage
+      const claimImages = await tx.claimImage.findMany({
+        where: { claimId },
+        select: { fileName: true },
+      });
+
+      if (claimImages.length > 0) {
+        await supabaseAdmin.storage
+          .from("claim-images")
+          .remove(claimImages.map((img) => img.fileName));
+      }
+
+      // Delete images records then delete claim
+      await tx.claimImage.deleteMany({ where: { claimId } });
+      await tx.comment.deleteMany({ where: { claimId } });
+      await tx.claim.delete({ where: { id: claimId } });
+
+      // Audit log
+      await tx.auditLog.create({
+        data: {
+          action: "CLAIM_CANCELLED",
+          actorId: user.id,
+          targetType: "Claim",
+          targetId: claimId,
+          detail: `User membatalkan klaim untuk barang: "${claim.report.itemName}"`,
+        },
+      });
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("cancelClaim error:", err);
+    return { success: false, error: "Gagal membatalkan klaim. Silakan coba lagi." };
+  }
+}

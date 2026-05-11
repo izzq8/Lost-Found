@@ -65,6 +65,8 @@ export default async function AdminFoundMatchDetailPage({ params }: { params: Pr
       images: match.report.images.map((img) => ({ url: img.url })),
     },
     images: match.images.map((img) => ({ url: img.url })),
+    handoverPhotoUrl: match.handoverPhotoUrl ?? null,
+    pickupPhotoUrl: match.pickupPhotoUrl ?? null,
   };
 
   return (

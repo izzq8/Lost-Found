@@ -16,6 +16,16 @@ export default async function AdminReportsPage() {
       reporter: { select: { name: true, jabatan: true } },
       category: { select: { name: true, imageUrl: true } },
       images: { take: 1, select: { url: true } },
+      foundMatches: {
+        where: { status: { in: ["APPROVED", "ITEM_RECEIVED", "COMPLETED"] } },
+        select: { finder: { select: { name: true } }, handoverPhotoUrl: true, pickupPhotoUrl: true },
+        take: 1,
+      },
+      claims: {
+        where: { status: { in: ["APPROVED", "COMPLETED"] } },
+        select: { claimant: { select: { name: true } }, handoverPhotoUrl: true },
+        take: 1,
+      },
     },
   });
 
@@ -32,6 +42,10 @@ export default async function AdminReportsPage() {
     createdAt: r.createdAt.toISOString(),
     reporterName: r.reporter.name,
     reporterJabatan: r.reporter.jabatan as string,
+    finderName: r.foundMatches[0]?.finder?.name || null,
+    claimantName: r.claims[0]?.claimant?.name || null,
+    handoverPhotoUrl: r.foundMatches[0]?.handoverPhotoUrl || r.claims[0]?.handoverPhotoUrl || null,
+    pickupPhotoUrl: r.foundMatches[0]?.pickupPhotoUrl || null,
   }));
 
   const pendingCount = reports.filter((r) => r.status === "PENDING").length;
@@ -55,6 +69,12 @@ export default async function AdminReportsPage() {
           className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors shadow-sm"
         >
           <UserPlus size={15} /> Lapor untuk Tamu
+        </Link>
+        <Link
+          href="/admin/reports/proxy"
+          className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm"
+        >
+          <UserPlus size={15} /> Lapor untuk User
         </Link>
       </div>
 

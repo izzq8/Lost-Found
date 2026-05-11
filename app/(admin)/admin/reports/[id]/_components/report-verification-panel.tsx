@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search, Trash2, Package } from "lucide-react";
 import { verifyReport, rejectReport } from "@/lib/actions/report.actions";
 import { adminDeleteReport } from "@/lib/actions/admin.actions";
+import { adminDirectFoundMatch } from "@/lib/actions/admin-direct-found.actions";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { PhotoUploadModal } from "@/components/shared/photo-upload-modal";
 
 interface ClaimInfo {
   id: string;
@@ -43,6 +45,9 @@ export default function ReportVerificationPanel({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [directFoundLoading, setDirectFoundLoading] = useState(false);
+  const [confirmDirectFound, setConfirmDirectFound] = useState(false);
+  const [showDirectFoundPhoto, setShowDirectFoundPhoto] = useState(false);
 
   const checklistItems = [
     "Data lengkap",
@@ -93,6 +98,20 @@ export default function ReportVerificationPanel({
       setConfirmDelete(false);
     }
     setDeleteLoading(false);
+  };
+
+  const handleDirectFound = async (photoUrl: string) => {
+    setDirectFoundLoading(true);
+    setError(null);
+    const result = await adminDirectFoundMatch(reportId, photoUrl);
+    if (result.success) {
+      setShowDirectFoundPhoto(false);
+      router.refresh();
+    } else {
+      setError(result.error || "Gagal memproses");
+      setShowDirectFoundPhoto(false);
+    }
+    setDirectFoundLoading(false);
   };
 
   // ── PENDING → Verification Panel ─────────────────────────────────────
@@ -202,6 +221,7 @@ export default function ReportVerificationPanel({
   // ── VERIFIED → Show claims ────────────────────────────────────────────
   if (reportStatus === "VERIFIED") {
     return (
+      <>
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
         <h3 className="text-sm font-bold text-slate-800 mb-4">Klaim Masuk</h3>
         {claims.length === 0 ? (
@@ -277,9 +297,35 @@ export default function ReportVerificationPanel({
             >
               <Search size={16} /> Lihat Semua Found Match
             </Link>
+
+            {/* Admin Direct Found Match */}
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowDirectFoundPhoto(true)}
+                disabled={directFoundLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                <Package size={16} /> Saya Menemukan Barang Ini
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Photo Upload Modal for Direct Found */}
+      <PhotoUploadModal
+        open={showDirectFoundPhoto}
+        title="Foto Dokumentasi Barang"
+        description="Unggah foto barang yang Anda temukan sebagai bukti dokumentasi penyerahan."
+        confirmLabel="Konfirmasi Ditemukan"
+        storageBucket="report-images"
+        storagePath={`handover/${reportId}`}
+        onConfirm={async (photoUrl) => {
+          await handleDirectFound(photoUrl);
+        }}
+        onCancel={() => setShowDirectFoundPhoto(false)}
+      />
+    </>
     );
   }
 
@@ -343,3 +389,4 @@ export default function ReportVerificationPanel({
     </div>
   );
 }
+

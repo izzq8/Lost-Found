@@ -23,9 +23,9 @@ export function StatusBadge({ status, className = "" }: { status: string; classN
   
   // Custom display labels for specific statuses
   const displayLabels: Record<string, string> = {
-    PENDING: "Pending",
-    VERIFIED: "Verified",
-    CLAIMED: "Claimed",
+    PENDING: "Menunggu Verifikasi",
+    VERIFIED: "Terverifikasi",
+    CLAIMED: "Selesai (Diklaim)",
     REJECTED: "Ditolak",
     EXPIRED: "Kedaluwarsa",
     APPROVED: "Disetujui",

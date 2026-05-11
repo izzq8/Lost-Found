@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 import {
   reportSchema,
   editReportLimitedSchema,
-  MAX_ACTIVE_REPORTS,
+  MAX_DAILY_REPORTS,
   MAX_IMAGES,
   MAX_IMAGE_SIZE_BYTES,
   ALLOWED_IMAGE_TYPES,
@@ -170,15 +170,20 @@ export async function createReport(
   try {
     const report = await prisma.$transaction(async (tx) => {
       // Re-check batas laporan INSIDE transaction → anti concurrency race condition
-      const activeCount = await tx.report.count({
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const dailyCount = await tx.report.count({
         where: {
           reporterId: userId,
-          status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] },
+          createdAt: { gte: todayStart, lte: todayEnd },
         },
       });
 
-      if (activeCount >= MAX_ACTIVE_REPORTS) {
-        throw new Error("LIMIT_EXCEEDED");
+      if (dailyCount >= MAX_DAILY_REPORTS) {
+        throw new Error("DAILY_LIMIT_EXCEEDED");
       }
 
       // Buat laporan
@@ -230,10 +235,10 @@ export async function createReport(
         .remove(uploadedImages.map((img) => img.fileName));
     }
 
-    if (err.message === "LIMIT_EXCEEDED") {
+    if (err.message === "DAILY_LIMIT_EXCEEDED") {
       return {
         success: false,
-        error: `Anda sudah mencapai batas maksimal ${MAX_ACTIVE_REPORTS} laporan aktif. Tunggu hingga laporan sebelumnya selesai diproses.`,
+        error: `Anda sudah mencapai batas maksimal ${MAX_DAILY_REPORTS} laporan per hari. Silakan coba lagi besok.`,
       };
     }
 

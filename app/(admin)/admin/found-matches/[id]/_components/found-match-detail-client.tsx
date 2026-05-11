@@ -14,6 +14,7 @@ import {
   User, MapPin, Calendar, FileText, Package, Image as ImageIcon,
   CheckCircle, XCircle, Truck, HandHeart, Loader2, AlertCircle, RotateCcw,
 } from "lucide-react";
+import { PhotoUploadModal } from "@/components/shared/photo-upload-modal";
 
 interface FoundMatchDetail {
   id: string;
@@ -40,6 +41,8 @@ interface FoundMatchDetail {
     images: { url: string }[];
   };
   images: { url: string }[];
+  handoverPhotoUrl: string | null;
+  pickupPhotoUrl: string | null;
 }
 
 export default function FoundMatchDetailClient({ match }: { match: FoundMatchDetail }) {
@@ -50,6 +53,8 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
   const [rejectReason, setRejectReason] = useState("");
   const [showRevokeSection, setShowRevokeSection] = useState(false);
   const [revokeReason, setRevokeReason] = useState("");
+  const [showHandoverPhoto, setShowHandoverPhoto] = useState(false);
+  const [showPickupPhoto, setShowPickupPhoto] = useState(false);
 
   const handleAction = async (action: string) => {
     setLoading(action);
@@ -60,12 +65,6 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
     switch (action) {
       case "approve":
         result = await approveFoundMatch(match.id);
-        break;
-      case "confirmReceived":
-        result = await confirmItemReceived(match.id);
-        break;
-      case "complete":
-        result = await completeFoundMatch(match.id);
         break;
       default:
         result = { success: false, error: "Unknown action" };
@@ -217,6 +216,34 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
             <p className="text-sm text-red-700">{match.rejectionReason}</p>
           </div>
         )}
+
+        {/* Photo Documentation */}
+        {(match.handoverPhotoUrl || match.pickupPhotoUrl) && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <ImageIcon size={20} className="text-orange-500" />
+              Dokumentasi Foto
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {match.handoverPhotoUrl && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-2">📦 Foto Penyerahan Barang</p>
+                  <div className="aspect-video rounded-xl overflow-hidden border border-slate-200">
+                    <img src={match.handoverPhotoUrl} alt="Foto penyerahan" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+              {match.pickupPhotoUrl && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-2">🤝 Foto Pengambilan Barang</p>
+                  <div className="aspect-video rounded-xl overflow-hidden border border-slate-200">
+                    <img src={match.pickupPhotoUrl} alt="Foto pengambilan" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* RIGHT: Sidebar */}
@@ -286,11 +313,11 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
             {match.status === "APPROVED" && (
               <>
                 <button
-                  onClick={() => handleAction("confirmReceived")}
+                  onClick={() => setShowHandoverPhoto(true)}
                   disabled={loading !== null}
                   className="w-full flex items-center justify-center gap-2 h-10 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-60"
                 >
-                  {loading === "confirmReceived" ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />}
+                  <Truck size={16} />
                   Barang Diterima
                 </button>
 
@@ -331,11 +358,11 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
 
             {match.status === "ITEM_RECEIVED" && (
               <button
-                onClick={() => handleAction("complete")}
+                onClick={() => setShowPickupPhoto(true)}
                 disabled={loading !== null}
                 className="w-full flex items-center justify-center gap-2 h-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-sm font-semibold hover:from-green-700 hover:to-emerald-700 transition-all cursor-pointer disabled:opacity-60"
               >
-                {loading === "complete" ? <Loader2 size={16} className="animate-spin" /> : <HandHeart size={16} />}
+                <HandHeart size={16} />
                 Serah Terima Selesai
               </button>
             )}
@@ -387,6 +414,45 @@ export default function FoundMatchDetailClient({ match }: { match: FoundMatchDet
           </div>
         </div>
       )}
+
+      {/* Photo Upload Modals */}
+      <PhotoUploadModal
+        open={showHandoverPhoto}
+        title="Foto Penyerahan Barang"
+        description="Unggah foto sebagai bukti bahwa barang telah diterima di Front Office dari penemu."
+        confirmLabel="Konfirmasi Diterima"
+        storageBucket="report-images"
+        storagePath={`handover/${match.id}`}
+        onConfirm={async (photoUrl) => {
+          const result = await confirmItemReceived(match.id, photoUrl);
+          if (result.success) {
+            setShowHandoverPhoto(false);
+            router.refresh();
+          } else {
+            throw new Error(result.error);
+          }
+        }}
+        onCancel={() => setShowHandoverPhoto(false)}
+      />
+
+      <PhotoUploadModal
+        open={showPickupPhoto}
+        title="Foto Pengambilan Barang"
+        description="Unggah foto sebagai bukti bahwa barang telah diserahkan ke pemiliknya."
+        confirmLabel="Konfirmasi Selesai"
+        storageBucket="report-images"
+        storagePath={`pickup/${match.id}`}
+        onConfirm={async (photoUrl) => {
+          const result = await completeFoundMatch(match.id, photoUrl);
+          if (result.success) {
+            setShowPickupPhoto(false);
+            router.refresh();
+          } else {
+            throw new Error(result.error);
+          }
+        }}
+        onCancel={() => setShowPickupPhoto(false)}
+      />
     </div>
   );
 }

@@ -1,13 +1,11 @@
-# Sprint 2 — 9 Issues Execution Tracker
+# Task Tracker — Photo Documentation & Admin Filters
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Admin report image fallback | `[x]` |
-| 2 | Admin found-match info section | `[x]` |
-| 3 | Fix found-match blocking (multi PENDING) | `[x]` |
-| 4 | Contextual finder banner | `[x]` |
-| 5 | Reporter badge sidebar + card | `[x]` |
-| 6 | Fix claim comment visibility | `[x]` |
-| 7 | Block claim after approved | `[x]` |
-| 8 | Cascade notification auto-reject | `[x]` |
-| 9 | User-side claim badges | `[x]` |
+| 1 | Photo upload modal for Found Match (Barang Diterima + Serah Terima) | completed |
+| 2 | Photo upload for Claim (Serah Terima Selesai) + completeClaim param | completed |
+| 3 | Display uploaded photos in detail pages | completed |
+| 4 | Advanced filters for admin Semua Laporan page | completed |
+| 5 | Advanced filters for admin Found Match page | completed |
+| 6 | Advanced filters for admin Semua Klaim page | completed |
+| 7 | Update Flow-and-Feature.md document | completed |
