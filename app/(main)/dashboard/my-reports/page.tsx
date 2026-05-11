@@ -41,12 +41,15 @@ export default async function MyReportsPage({
       />
 
       {/* Tab Navigation */}
-      <div className="flex bg-slate-100/70 p-1 rounded-xl w-fit border border-slate-200/50">
+      <div className="flex bg-slate-100/70 p-1 rounded-xl w-fit border border-slate-200/50 flex-wrap gap-0.5">
         <Link href="/dashboard/my-reports" className="px-5 py-2 text-sm font-semibold rounded-lg bg-white text-orange-600 shadow-sm border border-slate-200/60">
           Laporan Saya
         </Link>
         <Link href="/dashboard/my-claims" className="px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 transition-colors">
           Klaim Saya
+        </Link>
+        <Link href="/dashboard/my-found-matches" className="px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 transition-colors">
+          Penemuan Saya
         </Link>
       </div>
 

@@ -24,7 +24,7 @@ export default async function MainLayout({
   }
 
   // Parallel data fetching — all counts are independent
-  const [unreadCount, actionableReportsCount, actionableClaimsCount, pendingFoundReportsCount] = await Promise.all([
+  const [unreadCount, actionableReportsCount, actionableClaimsCount, pendingFoundReportsCount, approvedFoundMatchCount] = await Promise.all([
     prisma.notification.count({
       where: { userId: user.id, isRead: false }
     }),
@@ -49,9 +49,16 @@ export default async function MainLayout({
         status: "PENDING",
       },
     }),
+    // Found matches where this user is the FINDER and admin approved → needs to hand over
+    prisma.foundMatch.count({
+      where: {
+        finderId: user.id,
+        status: "APPROVED",
+      },
+    }),
   ]);
 
-  const totalActionableBadge = actionableReportsCount + actionableClaimsCount + pendingFoundReportsCount;
+  const totalActionableBadge = actionableReportsCount + actionableClaimsCount + pendingFoundReportsCount + approvedFoundMatchCount;
 
   // Prepare safe serializable user object for client
   const clientUser = {
