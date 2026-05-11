@@ -8,8 +8,8 @@
 | 1.4 | Standardize status badge labels | done |
 | 1.5 | Simplify navbar Riwayat dropdown | done |
 | 1.6 | Change hero subtitles | done |
-| 2.1 | Replace window.location.reload() with optimistic update | not_started |
-| 2.2 | Change report limiter to daily limit | not_started |
+| 2.1 | Replace window.location.reload() with optimistic update | done |
+| 2.2 | Change report limiter to daily limit | done |
 | 3.1 | Create cancel claim server action | not_started |
 | 3.2 | Add cancel & edit buttons to my-claims page | not_started |
 | 3.3 | Add cancel & edit to found item detail page | not_started |

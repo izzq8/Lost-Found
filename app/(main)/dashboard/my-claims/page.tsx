@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { ShieldCheck, FileText, Calendar, Info, ArrowRight, CheckCircle2, Package } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/shared/status-badge";
+import CancelClaimButton from "./_components/cancel-claim-button";
 
 export const metadata = {
   title: "Riwayat Klaim Saya — LostFound SMKFN",
@@ -102,6 +103,9 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={claim.status} className="shrink-0" />
+                    {claim.status === "PENDING" && (
+                      <CancelClaimButton claimId={claim.id} itemName={claim.report.itemName} />
+                    )}
                     <ArrowRight size={14} className="text-slate-300 group-hover:text-orange-500 transition-colors hidden sm:block" />
                   </div>
                 </div>

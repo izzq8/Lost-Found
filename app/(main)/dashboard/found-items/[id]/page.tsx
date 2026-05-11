@@ -9,6 +9,7 @@ import ReportActionsClient from "@/components/shared/report-actions-client";
 import { BackButton } from "@/components/shared/back-button";
 import { Package, MapPin, Calendar, Clock, Info, FileText, ArrowLeft, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
 import { ImageGallery } from "@/components/shared/image-gallery";
+import CancelClaimButton from "@/app/(main)/dashboard/my-claims/_components/cancel-claim-button";
 
 export default async function FoundItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, profile } = await requireAuth();
@@ -253,6 +254,13 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
                  <Link href={`/dashboard/claim/${report.id}`} className="flex items-center justify-center gap-2 p-3 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors shadow-sm shadow-orange-200">
                    <ShieldCheck size={18} /> Ajukan Klaim Barang Ini
                  </Link>
+              ) : userClaim?.status === "PENDING" ? (
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 text-center">
+                  <p className="text-xs text-amber-700 font-medium mb-3">
+                    Anda sudah mengajukan klaim. Menunggu review admin.
+                  </p>
+                  <CancelClaimButton claimId={userClaim.id} itemName={report.itemName} />
+                </div>
               ) : (
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
                   <p className="text-xs text-slate-500">
