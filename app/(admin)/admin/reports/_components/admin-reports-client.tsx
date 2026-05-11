@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, Package, Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
 
 interface ReportItem {
   id: string;
@@ -38,6 +39,8 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
   const router = useRouter();
   const [tab, setTab] = useState("Semua");
   const [search, setSearch] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
   useRealtimeRefresh({
     tables: ["reports"],
@@ -45,14 +48,33 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
     debounceMs: 1500,
   });
 
-  const filtered = reports
-    .filter((r) => tab === "Semua" || r.status === tab)
-    .filter(
-      (r) =>
-        !search ||
-        r.itemName.toLowerCase().includes(search.toLowerCase()) ||
-        r.reporterName.toLowerCase().includes(search.toLowerCase())
-    );
+  const categoryOptions = useMemo(() => {
+    const cats = [...new Set(reports.map((r) => r.category))];
+    return cats.sort().map((c) => ({ value: c, label: c }));
+  }, [reports]);
+
+  const typeOptions = [
+    { value: "LOST", label: "Hilang" },
+    { value: "FOUND", label: "Ditemukan" },
+  ];
+
+  const filtered = useMemo(() => {
+    let result = reports;
+    if (tab !== "Semua") result = result.filter((r) => r.status === tab);
+    if (selectedCategories.length > 0) result = result.filter((r) => selectedCategories.includes(r.category));
+    if (selectedTypes.length > 0) result = result.filter((r) => selectedTypes.includes(r.type));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((r) => r.itemName.toLowerCase().includes(q) || r.reporterName.toLowerCase().includes(q));
+    }
+    return result;
+  }, [reports, tab, selectedCategories, selectedTypes, search]);
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = { Semua: reports.length };
+    statusTabs.forEach((s) => { if (s !== "Semua") counts[s] = reports.filter((r) => r.status === s).length; });
+    return counts;
+  }, [reports]);
 
   return (
     <>
@@ -68,24 +90,39 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
             style={{ fontSize: "14px", fontWeight: tab === s ? 600 : 500 }}
           >
             {tabLabels[s]}
-            {s === "PENDING" && pendingCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 text-[11px] font-semibold">
-                {pendingCount}
-              </span>
-            )}
+            <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold ${
+              s === "PENDING" && pendingCount > 0 ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-400"
+            }`}>
+              {tabCounts[s] || 0}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Cari nama barang atau pelapor..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Cari nama barang atau pelapor..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
+          />
+        </div>
+        <MultiSelectDropdown
+          label="Kategori"
+          options={categoryOptions}
+          selected={selectedCategories}
+          onChange={setSelectedCategories}
+          searchPlaceholder="Cari kategori..."
+        />
+        <MultiSelectDropdown
+          label="Tipe"
+          options={typeOptions}
+          selected={selectedTypes}
+          onChange={setSelectedTypes}
         />
       </div>
 
