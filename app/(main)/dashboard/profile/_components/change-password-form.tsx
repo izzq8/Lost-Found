@@ -14,6 +14,7 @@ export default function ChangePasswordForm() {
   const [success, setSuccess] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +105,7 @@ export default function ChangePasswordForm() {
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  tabIndex={-1}
                 >
                   {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -127,6 +129,7 @@ export default function ChangePasswordForm() {
                   type="button"
                   onClick={() => setShowNew(!showNew)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  tabIndex={-1}
                 >
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -136,14 +139,24 @@ export default function ChangePasswordForm() {
             {/* Confirm Password */}
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Konfirmasi Password Baru</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password baru"
-                required
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ulangi password baru"
+                  required
+                  className="w-full h-10 px-3 pr-10 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <button

@@ -5,12 +5,13 @@ import { registerAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function RegisterForm() {
   const [state, formAction, isPending] = useActionState(registerAction, {});
   const [mounted, setMounted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Preserve form values on failed submission
   const nameRef = useRef<HTMLInputElement>(null);
@@ -74,7 +75,7 @@ export default function RegisterForm() {
           id="email"
           name="email"
           type="email"
-          placeholder="nama@smkfn.sch.id"
+          placeholder="Masukkan Emailmu..."
           onChange={(e) => setEmailValue(e.target.value)}
           className={cn(
             "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl",
@@ -91,16 +92,27 @@ export default function RegisterForm() {
         <Label htmlFor="password" className="text-slate-700 font-medium text-sm ml-1">
           Password
         </Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="••••••••"
-          className={cn(
-            "h-11 bg-white/50 backdrop-blur-sm border-slate-200 text-slate-800 placeholder:text-slate-400 focus-visible:ring-orange-500 rounded-xl",
-            state?.fieldErrors?.password && "border-red-500 focus-visible:ring-red-500"
-          )}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Masukkan Passwordmu..."
+            className={cn(
+              "w-full h-11 px-3 pr-11 bg-white/50 backdrop-blur-sm border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all rounded-xl text-sm",
+              state?.fieldErrors?.password && "border-red-500 focus:ring-red-500"
+            )}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
         {state?.fieldErrors?.password && (
           <p className="text-xs text-red-500 ml-1 mt-0.5">{state.fieldErrors.password[0]}</p>
         )}

@@ -127,4 +127,15 @@
   html {
     @apply font-sans;
   }
+
+  /* Hide native browser password reveal buttons — we use custom Eye/EyeOff toggle */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+  input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    position: absolute;
+    right: -9999px;
+  }
 }
