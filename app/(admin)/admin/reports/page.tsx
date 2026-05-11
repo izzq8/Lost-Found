@@ -68,6 +68,12 @@ export default async function AdminReportsPage() {
         >
           <UserPlus size={15} /> Lapor untuk Tamu
         </Link>
+        <Link
+          href="/admin/reports/proxy"
+          className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-slate-700 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm"
+        >
+          <UserPlus size={15} /> Lapor untuk User
+        </Link>
       </div>
 
       <AdminReportsClient reports={serialized} pendingCount={pendingCount} />

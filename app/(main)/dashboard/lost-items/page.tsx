@@ -1,9 +1,9 @@
 import { requireAuth } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import { PageHero } from "@/components/shared/page-hero";
-import { ItemCard } from "@/components/shared/item-card";
 import { Package, PenLine } from "lucide-react";
 import Link from "next/link";
+import { LostItemsFilterClient } from "./_components/items-filter-client";
 
 export const metadata = {
   title: "Barang Hilang — LostFound SMKFN",
@@ -13,14 +13,31 @@ export const metadata = {
 export default async function LostItemsPage() {
   await requireAuth();
 
-  const reports = await prisma.report.findMany({
-    where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      category: true,
-      images: { take: 1, orderBy: { createdAt: "asc" } },
-    },
-  });
+  const [reports, categories] = await Promise.all([
+    prisma.report.findMany({
+      where: { type: "LOST" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: true,
+        images: { take: 1, orderBy: { createdAt: "asc" } },
+      },
+    }),
+    prisma.category.findMany({
+      select: { name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const serialized = reports.map((report) => ({
+    id: report.id,
+    type: report.type,
+    status: report.status,
+    itemName: report.itemName,
+    location: report.location,
+    date: report.date,
+    category: { name: report.category.name, imageUrl: report.category.imageUrl ?? undefined },
+    reportImageUrl: report.images[0]?.url,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,45 +55,7 @@ export default async function LostItemsPage() {
         </Link>
       </PageHero>
 
-      {reports.length === 0 ? (
-        <div
-          className="rounded-2xl p-12 text-center flex flex-col items-center gap-3"
-          style={{
-            background: "rgba(255,255,255,0.5)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.7)",
-          }}
-        >
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-            <Package size={28} className="text-slate-300" />
-          </div>
-          <p className="text-slate-600 font-medium">Belum ada laporan barang hilang</p>
-          <Link
-            href="/dashboard/report/lost"
-            className="text-orange-600 text-sm font-medium hover:underline flex items-center gap-1"
-          >
-            <PenLine size={14} /> Buat laporan pertama
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {reports.map((report) => (
-            <ItemCard
-              key={report.id}
-              report={{
-                id: report.id,
-                type: report.type,
-                status: report.status,
-                itemName: report.itemName,
-                location: report.location,
-                date: report.date,
-                category: { name: report.category.name, imageUrl: report.category.imageUrl },
-                reportImageUrl: report.images[0]?.url,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <LostItemsFilterClient reports={serialized} categories={categories} />
     </div>
   );
 }
