@@ -100,16 +100,20 @@ export default async function MyReportsPage({
         <div className="flex flex-col gap-3">
           {reports.map((report) => {
             const routePrefix = report.type === "LOST" ? "lost-items" : "found-items";
+            const isFoundPending = report.type === "FOUND" && report.status === "PENDING";
             return (
               <Link
                 key={report.id}
                 href={`/dashboard/${routePrefix}/${report.id}`}
-                className="rounded-xl md:rounded-2xl p-4 flex gap-4 items-start transition-all hover:shadow-md cursor-pointer group"
+                className={`rounded-xl md:rounded-2xl p-4 flex gap-4 items-start transition-all hover:shadow-md cursor-pointer group ${
+                  isFoundPending ? 'ring-2 ring-green-400/70 shadow-green-100' : ''
+                }`}
                 style={{
-                  background: "rgba(255,255,255,0.5)",
+                  background: isFoundPending ? "rgba(240,253,244,0.7)" : "rgba(255,255,255,0.5)",
                   backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.7)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  border: isFoundPending ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(255,255,255,0.7)",
+                  boxShadow: isFoundPending ? "0 2px 12px rgba(34,197,94,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
+                  animation: isFoundPending ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : undefined,
                 }}
               >
                 {/* Thumbnail */}
@@ -144,6 +148,11 @@ export default async function MyReportsPage({
                       {report.status === "AWAITING_PICKUP" && (
                         <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold animate-pulse">
                           Segera Ambil!
+                        </span>
+                      )}
+                      {isFoundPending && (
+                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold animate-pulse">
+                          Segera Serahkan!
                         </span>
                       )}
                       <ArrowRight size={14} className="text-slate-300 group-hover:text-orange-500 transition-colors" />
