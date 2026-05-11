@@ -49,9 +49,10 @@ export default async function FoundItemsPage() {
       >
         <Link
           href="/dashboard/report/found"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold hover:bg-white/30 transition-colors border border-white/20"
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
         >
-          <PenLine size={15} /> Lapor Barang Ditemukan
+          <PenLine size={16} className="text-green-600" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Lapor Barang Ditemukan</span>
         </Link>
       </PageHero>
 

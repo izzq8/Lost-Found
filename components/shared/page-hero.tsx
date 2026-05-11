@@ -113,7 +113,7 @@ export function PageHero({
               )}
             </div>
           </div>
-          {children && <div className="flex items-center gap-2 shrink-0">{children}</div>}
+          {children && <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">{children}</div>}
         </div>
       </div>
     </div>

@@ -76,7 +76,22 @@ export default async function DashboardPage() {
         icon={LayoutDashboard}
         title={`Selamat datang, ${profile.name.split(' ')[0]}!`}
         subtitle={todayStr}
-      />
+      >
+        <Link
+          href="/dashboard/report/lost"
+          className="hidden sm:flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <Package size={16} className="text-red-500" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Lapor Hilang</span>
+        </Link>
+        <Link
+          href="/dashboard/report/found"
+          className="hidden sm:flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <Search size={16} className="text-green-600" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Lapor Ditemukan</span>
+        </Link>
+      </PageHero>
 
       {/* Announcement Alert */}
       {activeAnnouncement && (
@@ -101,17 +116,23 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
-        <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
-        <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
-        <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
+      <div className="flex sm:grid sm:grid-cols-3 gap-3 md:gap-5 overflow-x-auto pb-2 sm:pb-0 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
+        </div>
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
+        </div>
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
+        </div>
       </div>
 
       {/* Mobile Quick Actions - hanya tampil di mobile */}
-      <div className="grid grid-cols-2 gap-3 lg:hidden">
+      <div className="grid grid-cols-2 gap-3 sm:hidden">
         <Link
           href="/dashboard/report/lost"
-          className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+          className="flex flex-col gap-2 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
         >
           <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
             <Package size={18} className="text-red-500" />
@@ -123,7 +144,7 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/dashboard/report/found"
-          className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+          className="flex flex-col gap-2 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
         >
           <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
             <Search size={18} className="text-green-600" />
@@ -134,6 +155,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
       </div>
+
 
       {/* Recent Lost Items */}
       <div>

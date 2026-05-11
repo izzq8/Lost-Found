@@ -72,14 +72,14 @@ export function ItemCard({ report }: ItemCardProps) {
         )}
       </div>
       <div className="p-3 md:p-4">
-        <div className="flex items-center justify-between mb-1.5 md:mb-2">
+        <div className="flex items-center justify-between gap-1.5 mb-1.5 md:mb-2 overflow-hidden">
           <span 
-            className="px-1.5 md:px-2 py-0.5 rounded bg-white text-orange-600 text-[9px] md:text-[11px] font-semibold tracking-wide" 
+            className="px-1.5 md:px-2 py-0.5 rounded bg-white text-orange-600 text-[9px] md:text-[11px] font-semibold tracking-wide truncate shrink" 
             style={{ border: '1px solid rgba(234,88,12,0.1)' }}
           >
             {report.category.name}
           </span>
-          <StatusBadge status={report.status} />
+          <StatusBadge status={report.status} className="text-[9px] md:text-[11px] shrink-0" />
         </div>
         <h3 
           className="group-hover:text-orange-600 transition-colors truncate text-[13px] md:text-sm font-semibold text-slate-800"

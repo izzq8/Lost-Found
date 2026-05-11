@@ -48,7 +48,7 @@ const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: nu
     items: [
       { icon: Tag, label: "Kategori", href: "/admin/categories", badge: 0 },
       { icon: KeyRound, label: "Enrollment Code", href: "/admin/enrollment", badge: 0 },
-      { icon: Megaphone, label: "Pengumuman", href: "/admin/announcements", badge: 0 },
+      // Fitur Pengumuman di-disable sementara (Deferred) untuk saran pengembangan
     ],
   },
   {
