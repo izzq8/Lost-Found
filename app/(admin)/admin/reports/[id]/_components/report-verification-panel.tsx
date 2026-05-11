@@ -70,7 +70,7 @@ export default function ReportVerificationPanel({
   const handleVerify = async () => {
     setLoading(true);
     setError(null);
-    const result = await verifyReport(reportId);
+    const result = await verifyReport(reportId, receivedPhotoUrl ?? undefined);
     if (result.success) {
       router.refresh();
     } else {
@@ -177,7 +177,7 @@ export default function ReportVerificationPanel({
             title="Upload Foto Penerimaan Barang"
             description="Upload foto barang saat diterima dari pelapor/penemu sebagai bukti dokumentasi"
             confirmLabel="Simpan Foto"
-            storageBucket="documentation-photos"
+            storageBucket="report-images"
             storagePath={`received/${reportId}`}
             onConfirm={async (url) => {
               setReceivedPhotoUrl(url);

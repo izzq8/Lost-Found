@@ -46,6 +46,7 @@ export default function ReportFormClient({
 
   const {
     register,
+    watch,
     handleSubmit,
     formState: { errors },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +55,14 @@ export default function ReportFormClient({
     defaultValues: { type },
     mode: "onChange",
   });
+
+  const today = new Date().toISOString().split("T")[0];
+  const watchedDate = watch("date");
+  const isToday = watchedDate === today;
+  const now = new Date();
+  const maxTime = isToday
+    ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+    : undefined;
 
   // Tambahkan file ke preview list
   const addFiles = useCallback((files: FileList | File[]) => {
@@ -306,9 +315,15 @@ export default function ReportFormClient({
             <input
               {...register("time")}
               type="time"
+              max={maxTime}
               className={inputCls(!!errors.time)}
               disabled={isPending || isAtLimit}
             />
+            {isToday && (
+              <p className="mt-1 text-[11px] text-slate-400">
+                Jika tanggal hari ini, waktu tidak boleh melebihi {maxTime}
+              </p>
+            )}
             {errors.time && (
               <p className="mt-1 text-xs text-red-500">{errors.time.message as string}</p>
             )}
