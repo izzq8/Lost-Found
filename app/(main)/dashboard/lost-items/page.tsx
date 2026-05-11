@@ -28,7 +28,7 @@ export default async function LostItemsPage() {
         variant="default"
         icon={Package}
         title="Barang Hilang"
-        subtitle={`${reports.length} laporan aktif`}
+        subtitle={`${reports.length} laporan barang hilang`}
       >
         <Link
           href="/dashboard/report/lost"

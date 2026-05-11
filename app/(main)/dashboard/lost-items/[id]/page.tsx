@@ -272,6 +272,13 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
                   </p>
                 </div>
               </div>
+            ) : ["CLAIMED", "RESOLVED", "EXPIRED", "REJECTED"].includes(report.status) ? (
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-4">Tindakan</h3>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                  <p className="text-xs text-slate-500">Laporan ini sudah selesai.</p>
+                </div>
+              </div>
             ) : hasApprovedMatch ? (
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">Tindakan</h3>

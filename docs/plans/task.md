@@ -1,13 +1,23 @@
-# Sprint 2 — 9 Issues Execution Tracker
+# Task Tracker — 21 Issues Fix
 
-| # | Task | Status |
-|---|------|--------|
-| 1 | Admin report image fallback | `[x]` |
-| 2 | Admin found-match info section | `[x]` |
-| 3 | Fix found-match blocking (multi PENDING) | `[x]` |
-| 4 | Contextual finder banner | `[x]` |
-| 5 | Reporter badge sidebar + card | `[x]` |
-| 6 | Fix claim comment visibility | `[x]` |
-| 7 | Block claim after approved | `[x]` |
-| 8 | Cascade notification auto-reject | `[x]` |
-| 9 | User-side claim badges | `[x]` |
+| Task | Description | Status |
+|------|-------------|--------|
+| 1.1 | Remove "Diklaim Bulan Ini" stat card + update "Laporan Saya" | done |
+| 1.2 | Swap eye icons on password fields | done |
+| 1.3 | Fix status display for completed reports | done |
+| 1.4 | Standardize status badge labels | not_started |
+| 1.5 | Simplify navbar Riwayat dropdown | not_started |
+| 1.6 | Change hero subtitles | not_started |
+| 2.1 | Replace window.location.reload() with optimistic update | not_started |
+| 2.2 | Change report limiter to daily limit | not_started |
+| 3.1 | Create cancel claim server action | not_started |
+| 3.2 | Add cancel & edit buttons to my-claims page | not_started |
+| 3.3 | Add cancel & edit to found item detail page | not_started |
+| 4.1 | Owner approval for found match (hybrid model) | not_started |
+| 4.2 | Admin "Saya Menemukan Barang Ini" | not_started |
+| 5.1 | Prisma schema migration (photo fields) | not_started |
+| 5.2 | Add photo upload to admin actions | not_started |
+| 5.3 | Add finder/claimant names to admin reports | not_started |
+| 5.4 | Extend export with finder/claimant & photos | not_started |
+| 6.1 | Search & filter for lost/found items | not_started |
+| 6.2 | Manual report for registered users | not_started |

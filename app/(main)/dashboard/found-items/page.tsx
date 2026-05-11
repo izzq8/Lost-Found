@@ -25,7 +25,7 @@ export default async function FoundItemsPage() {
         variant="default"
         icon={Eye}
         title="Barang Ditemukan"
-        subtitle={`${reports.length} laporan aktif`}
+        subtitle={`${reports.length} laporan barang ditemukan`}
       >
         <Link
           href="/dashboard/report/found"
