@@ -306,13 +306,13 @@ export async function deleteReport(reportId: string): Promise<{ success: boolean
 
 // ── SERVER ACTION: VERIFY REPORT (ADMIN) ──────────────────────────────────────
 
-export async function verifyReport(reportId: string): Promise<{ success: boolean; error?: string }> {
+export async function verifyReport(reportId: string, receivedPhotoUrl?: string): Promise<{ success: boolean; error?: string }> {
   try {
     const { user, profile } = await requireAdmin();
 
     const report = await prisma.report.findUnique({
       where: { id: reportId },
-      select: { id: true, status: true, itemName: true, reporterId: true },
+      select: { id: true, status: true, itemName: true, reporterId: true, type: true },
     });
 
     if (!report) return { success: false, error: "Laporan tidak ditemukan." };
@@ -323,6 +323,17 @@ export async function verifyReport(reportId: string): Promise<{ success: boolean
         where: { id: reportId },
         data: { status: "VERIFIED", verifiedAt: new Date() },
       });
+
+      // For FOUND reports: store the admin's received-item photo as a ReportImage
+      if (report.type === "FOUND" && receivedPhotoUrl) {
+        await tx.reportImage.create({
+          data: {
+            reportId,
+            url: receivedPhotoUrl,
+            fileName: "admin-received-photo",
+          },
+        });
+      }
 
       await tx.notification.create({
         data: {
@@ -339,7 +350,7 @@ export async function verifyReport(reportId: string): Promise<{ success: boolean
           actorId: user.id,
           targetType: "Report",
           targetId: reportId,
-          detail: `Admin '${profile.name}' memverifikasi laporan "${report.itemName}".`,
+          detail: `Admin '${profile.name}' memverifikasi laporan "${report.itemName}"${receivedPhotoUrl ? " (dengan foto penerimaan)" : ""}.`,
         },
       });
     });

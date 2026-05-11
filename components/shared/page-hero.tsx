@@ -1,5 +1,28 @@
 import React from 'react';
 
+// Indonesian status label mapping
+const statusLabels: Record<string, string> = {
+  PENDING: 'Menunggu Verifikasi',
+  VERIFIED: 'Terverifikasi',
+  CLAIMED: 'Selesai (Diklaim)',
+  REJECTED: 'Ditolak',
+  EXPIRED: 'Kedaluwarsa',
+  APPROVED: 'Disetujui',
+  PROCESSED: 'Diproses',
+  COMPLETED: 'Selesai',
+  AWAITING_PICKUP: 'Menunggu Diambil',
+  ITEM_RECEIVED: 'Barang Diterima',
+  RESOLVED: 'Selesai (Mandiri)',
+  ACTIVE: 'Aktif',
+  DEACTIVATED: 'Nonaktif',
+  LOST: 'Hilang',
+  FOUND: 'Ditemukan',
+};
+
+function localizeStatus(raw: string): string {
+  return statusLabels[raw.toUpperCase()] ?? raw;
+}
+
 interface PageHeroProps {
   title: string;
   subtitle?: string;
@@ -18,8 +41,6 @@ export function PageHero({
   badge,
 }: PageHeroProps) {
 
-  // Gunakan tailwind string class murni yang responsive
-  // Kita abaikan inline style kaku untuk form padding & size
   const containerPaddingY = variant === 'large' ? 'py-5 md:py-8' : variant === 'default' ? 'py-4 md:py-6' : 'py-3 md:py-5';
   const containerPaddingX = variant === 'large' ? 'px-5 md:px-8' : 'px-4 md:px-6';
   
@@ -32,79 +53,17 @@ export function PageHero({
   const iconContainerSize = variant === 'large' ? 'w-12 h-12 md:w-16 md:h-16' : variant === 'default' ? 'w-10 h-10 md:w-[52px] md:h-[52px]' : 'w-8 h-8 md:w-11 md:h-11';
   const iconPixelSize = variant === 'large' ? 'w-6 h-6 md:w-11 md:h-11' : variant === 'default' ? 'w-5 h-5 md:w-9 md:h-9' : 'w-4 h-4 md:w-7 md:h-7';
 
+  const displayBadge = badge ? localizeStatus(badge) : undefined;
+
   return (
     <div
       className="relative overflow-hidden rounded-2xl md:rounded-2xl"
       style={{
-        background: 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fdba74 100%)', // Adjusted to bright orange theme
+        background: 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fdba74 100%)',
       }}
     >
-      {/* Decorative floating shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: variant === 'large' ? '200px' : '140px',
-            height: variant === 'large' ? '200px' : '140px',
-            background: 'rgba(255,255,255,0.1)',
-            top: '-40px',
-            right: '-20px',
-          }}
-        />
-        <div
-           className="absolute rounded-full hidden md:block"
-          style={{
-            width: variant === 'large' ? '120px' : '80px',
-            height: variant === 'large' ? '120px' : '80px',
-            background: 'rgba(255,255,255,0.08)',
-            bottom: '-30px',
-            right: variant === 'large' ? '120px' : '60px',
-          }}
-        />
-        <div
-          className="absolute rounded-full hidden md:block"
-          style={{
-            width: '60px',
-            height: '60px',
-            background: 'rgba(255,255,255,0.15)',
-            top: '20px',
-            left: variant === 'large' ? '40%' : '60%',
-          }}
-        />
-        {variant === 'large' && (
-          <>
-            <div
-              className="absolute rounded-full hidden md:block"
-              style={{
-                width: '160px',
-                height: '160px',
-                background: 'rgba(255,255,255,0.05)',
-                bottom: '-60px',
-                left: '-40px',
-              }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{
-                width: '40px',
-                height: '40px',
-                background: 'rgba(255,255,255,0.12)',
-                top: '50%',
-                right: '30%',
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Glass overlay */}
-      <div
-        className={`relative ${containerPaddingY} ${containerPaddingX}`}
-        style={{
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(2px)',
-        }}
-      >
+      {/* Flat content — no decorative bubbles */}
+      <div className={`relative ${containerPaddingY} ${containerPaddingX}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
             {Icon && (
@@ -112,7 +71,6 @@ export function PageHero({
                 className={`${iconContainerSize} rounded-xl flex items-center justify-center shrink-0`}
                 style={{
                   background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(8px)',
                   border: '1px solid rgba(255,255,255,0.2)',
                 }}
               >
@@ -126,19 +84,18 @@ export function PageHero({
                 >
                   {title}
                 </h1>
-                {badge && (
+                {displayBadge && (
                   <span
                     className="rounded-full px-2 py-0.5 md:px-2.5 md:py-0.5 shrink-0"
                     style={{
                       fontSize: '10px',
                       fontWeight: 700,
                       background: 'rgba(255,255,255,0.25)',
-                      backdropFilter: 'blur(4px)',
                       color: '#ffffff',
                       border: '1px solid rgba(255,255,255,0.3)',
                     }}
                   >
-                    {badge}
+                    {displayBadge}
                   </span>
                 )}
               </div>
