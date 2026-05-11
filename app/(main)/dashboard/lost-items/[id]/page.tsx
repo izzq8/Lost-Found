@@ -301,11 +301,11 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
                 </div>
               </div>
             ) : hasApprovedMatch ? (
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">Tindakan</h3>
                 <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-center">
                   <p className="text-xs text-blue-700 font-medium">
-                    Barang ini sudah dalam proses pengembalian.
+                    Barang ini sudah ditemukan dan sedang dalam proses pengembalian ke pemiliknya.
                   </p>
                 </div>
               </div>
