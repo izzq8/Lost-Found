@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import UserNavClient from "@/components/layout/user-nav-client";
 import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
+import { Footer } from "@/components/layout/footer";
 
 export default async function MainLayout({
   children,
@@ -84,11 +85,7 @@ export default async function MainLayout({
       </main>
 
       {/* Footer minimalis */}
-      <footer className="py-6 border-t border-slate-200 mt-auto bg-white/50 backdrop-blur-sm">
-        <div className="text-center text-slate-500 text-sm">
-           © 2026 SMK Forward Nusantara. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav totalActionableBadge={totalActionableBadge} />
