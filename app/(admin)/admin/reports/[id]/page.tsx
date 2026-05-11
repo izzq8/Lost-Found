@@ -132,6 +132,7 @@ export default async function AdminReportDetailPage({ params }: { params: Promis
             reportId={report.id}
             currentUserId={user.id}
             currentUserRole={profile.role}
+            currentUserName={profile.name}
           />
         </div>
 

@@ -10,12 +10,17 @@ export const metadata = {
 export default async function ReportFoundPage() {
   const { user } = await requireAuth();
 
-  const [categories, activeCount] = await Promise.all([
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [categories, dailyCount] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.report.count({
       where: {
         reporterId: user.id,
-        status: { notIn: ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"] },
+        createdAt: { gte: todayStart, lte: todayEnd },
       },
     }),
   ]);
@@ -25,7 +30,7 @@ export default async function ReportFoundPage() {
       <ReportFormClient
         type="FOUND"
         categories={categories}
-        activeReportCount={activeCount}
+        dailyReportCount={dailyCount}
       />
     </div>
   );

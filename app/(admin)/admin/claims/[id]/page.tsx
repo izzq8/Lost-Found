@@ -113,6 +113,7 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
             claimId={claim.id}
             currentUserId={user.id}
             currentUserRole={profile.role}
+            currentUserName={profile.name}
           />
         </div>
 

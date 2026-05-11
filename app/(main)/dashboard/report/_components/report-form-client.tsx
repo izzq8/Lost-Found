@@ -18,7 +18,7 @@ interface Category {
 interface ReportFormClientProps {
   type: "LOST" | "FOUND";
   categories: Category[];
-  activeReportCount: number;
+  dailyReportCount: number;
 }
 
 interface ImagePreview {
@@ -30,7 +30,7 @@ interface ImagePreview {
 export default function ReportFormClient({
   type,
   categories,
-  activeReportCount,
+  dailyReportCount,
 }: ReportFormClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -42,7 +42,7 @@ export default function ReportFormClient({
   const [showSuccess, setShowSuccess] = useState(false);
 
   const isLost = type === "LOST";
-  const isAtLimit = activeReportCount >= 3;
+  const isAtLimit = dailyReportCount >= 4;
 
   const {
     register,
@@ -172,8 +172,8 @@ export default function ReportFormClient({
       >
         <Info size={16} className="shrink-0" />
         <span>
-          Laporan aktif Anda: <strong>{activeReportCount}/3</strong>
-          {isAtLimit && " — Anda sudah mencapai batas laporan aktif."}
+          Laporan hari ini: <strong>{dailyReportCount}/4</strong>
+          {isAtLimit && " — Anda sudah mencapai batas laporan harian."}
         </span>
       </div>
 

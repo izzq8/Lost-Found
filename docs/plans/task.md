@@ -5,9 +5,9 @@
 | 1.1 | Remove "Diklaim Bulan Ini" stat card + update "Laporan Saya" | done |
 | 1.2 | Swap eye icons on password fields | done |
 | 1.3 | Fix status display for completed reports | done |
-| 1.4 | Standardize status badge labels | not_started |
-| 1.5 | Simplify navbar Riwayat dropdown | not_started |
-| 1.6 | Change hero subtitles | not_started |
+| 1.4 | Standardize status badge labels | done |
+| 1.5 | Simplify navbar Riwayat dropdown | done |
+| 1.6 | Change hero subtitles | done |
 | 2.1 | Replace window.location.reload() with optimistic update | not_started |
 | 2.2 | Change report limiter to daily limit | not_started |
 | 3.1 | Create cancel claim server action | not_started |

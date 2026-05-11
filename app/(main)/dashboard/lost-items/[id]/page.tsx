@@ -212,7 +212,8 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
             comments={report.comments} 
             reportId={report.id} 
             currentUserId={user.id} 
-            currentUserRole={profile.role} 
+            currentUserRole={profile.role}
+            currentUserName={profile.name}
           />
         </div>
 

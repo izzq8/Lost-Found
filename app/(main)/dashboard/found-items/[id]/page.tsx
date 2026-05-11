@@ -201,7 +201,8 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
             comments={report.comments} 
             reportId={report.id} 
             currentUserId={user.id} 
-            currentUserRole={profile.role} 
+            currentUserRole={profile.role}
+            currentUserName={profile.name}
           />
 
           {/* Diskusi Klaim Anda — Task 6 */}
@@ -215,6 +216,7 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
                 claimId={userClaimWithComments.id}
                 currentUserId={user.id}
                 currentUserRole={profile.role}
+                currentUserName={profile.name}
               />
             </div>
           )}
