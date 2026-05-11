@@ -24,7 +24,7 @@ export default async function MainLayout({
   }
 
   // Parallel data fetching — all counts are independent
-  const [unreadCount, actionableReportsCount, actionableClaimsCount] = await Promise.all([
+  const [unreadCount, actionableReportsCount, actionableClaimsCount, pendingFoundReportsCount] = await Promise.all([
     prisma.notification.count({
       where: { userId: user.id, isRead: false }
     }),
@@ -42,7 +42,16 @@ export default async function MainLayout({
         status: "APPROVED",
       },
     }),
+    prisma.report.count({
+      where: {
+        reporterId: user.id,
+        type: "FOUND",
+        status: "PENDING",
+      },
+    }),
   ]);
+
+  const totalActionableBadge = actionableReportsCount + actionableClaimsCount + pendingFoundReportsCount;
 
   // Prepare safe serializable user object for client
   const clientUser = {
@@ -57,8 +66,7 @@ export default async function MainLayout({
       <UserNavClient 
         currentUser={clientUser} 
         unreadCount={unreadCount} 
-        actionableReportsCount={actionableReportsCount} 
-        actionableClaimsCount={actionableClaimsCount}
+        totalActionableBadge={totalActionableBadge}
       />
       
       {/* Content */}
@@ -76,7 +84,7 @@ export default async function MainLayout({
       </footer>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav actionableClaimsCount={actionableClaimsCount} />
+      <MobileBottomNav totalActionableBadge={totalActionableBadge} />
     </div>
   );
 }

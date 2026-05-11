@@ -18,6 +18,7 @@ interface ClaimItem {
   imageUrl: string | null;
   categoryImageUrl: string | null;
   createdAt: string;
+  handoverPhotoUrl: string | null;
 }
 
 const statusTabs = ["Semua", "PENDING", "APPROVED", "REJECTED", "COMPLETED"];
@@ -114,7 +115,7 @@ export default function AdminClaimsClient({ claims, pendingCount }: { claims: Cl
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
-                {["#", "Gambar", "Tanggal", "Pengklaim", "Barang Diklaim", "Kategori", "Status", "Aksi"].map((h) => (
+                {["#", "Gambar", "Tanggal", "Pengklaim", "Barang Diklaim", "Kategori", "Status", "Dok. Foto", "Aksi"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     {h}
                   </th>
@@ -124,7 +125,7 @@ export default function AdminClaimsClient({ claims, pendingCount }: { claims: Cl
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">
                     Tidak ada klaim yang sesuai filter.
                   </td>
                 </tr>
@@ -157,6 +158,15 @@ export default function AdminClaimsClient({ claims, pendingCount }: { claims: Cl
                       <td className="px-4 py-3 text-sm text-slate-700 font-medium">{c.itemName}</td>
                       <td className="px-4 py-3 text-sm text-slate-500">{c.category}</td>
                       <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                      <td className="px-4 py-3">
+                        {c.handoverPhotoUrl ? (
+                          <a href={c.handoverPhotoUrl} target="_blank" rel="noopener noreferrer" title="Foto Serah Terima">
+                            <img src={c.handoverPhotoUrl} alt="Serah Terima" className="w-8 h-8 rounded object-cover border border-slate-200 hover:ring-2 hover:ring-orange-300 transition-all" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-300">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <Link
                           href={`/admin/claims/${c.id}`}

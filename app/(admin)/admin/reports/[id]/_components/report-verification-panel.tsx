@@ -48,6 +48,8 @@ export default function ReportVerificationPanel({
   const [directFoundLoading, setDirectFoundLoading] = useState(false);
   const [confirmDirectFound, setConfirmDirectFound] = useState(false);
   const [showDirectFoundPhoto, setShowDirectFoundPhoto] = useState(false);
+  const [receivedPhotoUrl, setReceivedPhotoUrl] = useState<string | null>(null);
+  const [showReceivedPhotoModal, setShowReceivedPhotoModal] = useState(false);
 
   const checklistItems = [
     "Data lengkap",
@@ -59,6 +61,8 @@ export default function ReportVerificationPanel({
     Object.fromEntries(checklistItems.map((item) => [item, false]))
   );
   const allChecked = checklistItems.every((item) => checkedItems[item]);
+  const isFoundReport = reportType === "FOUND";
+  const canApprove = allChecked && (!isFoundReport || receivedPhotoUrl);
   const toggleCheck = (item: string) => {
     setCheckedItems((prev) => ({ ...prev, [item]: !prev[item] }));
   };
@@ -138,12 +142,57 @@ export default function ReportVerificationPanel({
           ))}
         </div>
 
+        {/* Photo receipt for FOUND reports */}
+        {isFoundReport && (
+          <div className="mb-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Foto Penerimaan Barang</p>
+            {receivedPhotoUrl ? (
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
+                <img src={receivedPhotoUrl} alt="Bukti penerimaan" className="w-12 h-12 rounded-lg object-cover border border-green-300" />
+                <div className="flex-1">
+                  <p className="text-xs text-green-700 font-semibold">Foto berhasil diunggah ✓</p>
+                  <button
+                    onClick={() => setReceivedPhotoUrl(null)}
+                    className="text-[10px] text-red-500 hover:underline cursor-pointer mt-0.5"
+                  >
+                    Hapus & upload ulang
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowReceivedPhotoModal(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-50 text-blue-600 text-sm font-semibold hover:bg-blue-100 transition-colors border border-blue-200 cursor-pointer"
+              >
+                📷 Upload Foto Penerimaan Barang
+              </button>
+            )}
+            <p className="text-[10px] text-slate-400 mt-1.5">Wajib: Foto barang saat diterima dari pelapor/penemu</p>
+          </div>
+        )}
+
+        {showReceivedPhotoModal && (
+          <PhotoUploadModal
+            open={showReceivedPhotoModal}
+            title="Upload Foto Penerimaan Barang"
+            description="Upload foto barang saat diterima dari pelapor/penemu sebagai bukti dokumentasi"
+            confirmLabel="Simpan Foto"
+            storageBucket="documentation-photos"
+            storagePath={`received/${reportId}`}
+            onConfirm={async (url) => {
+              setReceivedPhotoUrl(url);
+              setShowReceivedPhotoModal(false);
+            }}
+            onCancel={() => setShowReceivedPhotoModal(false)}
+          />
+        )}
+
         <div className="flex flex-col gap-3">
           <button
             onClick={handleVerify}
-            disabled={loading || !allChecked}
+            disabled={loading || !canApprove}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-            title={!allChecked ? "Centang semua checklist verifikasi terlebih dahulu" : undefined}
+            title={!canApprove ? (isFoundReport && !receivedPhotoUrl ? "Upload foto penerimaan barang terlebih dahulu" : "Centang semua checklist verifikasi terlebih dahulu") : undefined}
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
             Setujui Laporan

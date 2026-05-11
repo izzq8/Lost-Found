@@ -34,6 +34,7 @@ export default async function AdminClaimsPage() {
     imageUrl: c.report.images.length > 0 ? c.report.images[0].url : null,
     categoryImageUrl: c.report.category.imageUrl,
     createdAt: c.createdAt.toISOString(),
+    handoverPhotoUrl: c.handoverPhotoUrl || null,
   }));
 
   const pendingCount = claims.filter((c) => c.status === "PENDING").length;

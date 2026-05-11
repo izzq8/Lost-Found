@@ -38,11 +38,10 @@ interface UserNavClientProps {
     avatarInitials: string;
   };
   unreadCount?: number;
-  actionableReportsCount?: number;
-  actionableClaimsCount?: number;
+  totalActionableBadge?: number;
 }
 
-export default function UserNavClient({ currentUser, unreadCount = 0, actionableReportsCount = 0, actionableClaimsCount = 0 }: UserNavClientProps) {
+export default function UserNavClient({ currentUser, unreadCount = 0, totalActionableBadge = 0 }: UserNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -217,7 +216,23 @@ export default function UserNavClient({ currentUser, unreadCount = 0, actionable
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map(item => <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />)}
             <DropdownMenu id="lapor" label="Lapor" items={laporItems} />
-            <NavLink href="/dashboard/my-reports" label="Riwayat" icon={FileText} />
+            <Link
+              href="/dashboard/my-reports"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims')
+                  ? 'bg-orange-500/15 text-orange-600'
+                  : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
+              }`}
+              style={{ fontSize: '14px', fontWeight: (isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims')) ? 600 : 500 }}
+            >
+              <FileText size={18} className="shrink-0" />
+              <span>Riwayat</span>
+              {totalActionableBadge > 0 && (
+                <span className="ml-0.5 w-[18px] h-[18px] bg-green-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: '10px', fontWeight: 700 }}>
+                  {totalActionableBadge}
+                </span>
+              )}
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
