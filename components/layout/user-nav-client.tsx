@@ -219,11 +219,11 @@ export default function UserNavClient({ currentUser, unreadCount = 0, totalActio
             <Link
               href="/dashboard/my-reports"
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims')
+                isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims') || isActive('/dashboard/my-found-matches')
                   ? 'bg-orange-500/15 text-orange-600'
                   : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
               }`}
-              style={{ fontSize: '14px', fontWeight: (isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims')) ? 600 : 500 }}
+              style={{ fontSize: '14px', fontWeight: (isActive('/dashboard/my-reports') || isActive('/dashboard/my-claims') || isActive('/dashboard/my-found-matches')) ? 600 : 500 }}
             >
               <FileText size={18} className="shrink-0" />
               <span>Riwayat</span>

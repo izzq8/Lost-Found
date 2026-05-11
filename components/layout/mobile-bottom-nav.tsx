@@ -184,7 +184,9 @@ export default function MobileBottomNav({ totalActionableBadge = 0 }: MobileBott
               );
             }
 
-            const active = isActive(tab.href);
+            const active = tab.href === "/dashboard/my-reports"
+              ? (isActive("/dashboard/my-reports") || isActive("/dashboard/my-claims") || isActive("/dashboard/my-found-matches"))
+              : isActive(tab.href);
             return (
               <Link
                 key={tab.href}
