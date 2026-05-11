@@ -205,6 +205,7 @@ model Claim {
   guestPhone      String?     @map("guest_phone")
   approvedAt      DateTime?   @map("approved_at")
   completedAt     DateTime?   @map("completed_at")
+  handoverPhotoUrl String?    @map("handover_photo_url")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
@@ -334,6 +335,8 @@ model FoundMatch {
   approvedAt     DateTime? @map("approved_at")
   itemReceivedAt DateTime? @map("item_received_at")
   completedAt    DateTime? @map("completed_at")
+  handoverPhotoUrl String? @map("handover_photo_url")
+  pickupPhotoUrl   String? @map("pickup_photo_url")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 

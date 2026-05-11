@@ -13,8 +13,8 @@
 | 3.1 | Create cancel claim server action | done |
 | 3.2 | Add cancel & edit buttons to my-claims page | done |
 | 3.3 | Add cancel & edit to found item detail page | done |
-| 4.1 | Owner approval for found match (hybrid model) | not_started |
-| 4.2 | Admin "Saya Menemukan Barang Ini" | not_started |
+| 4.1 | Owner approval for found match (hybrid model) | done |
+| 4.2 | Admin "Saya Menemukan Barang Ini" | done |
 | 5.1 | Prisma schema migration (photo fields) | not_started |
 | 5.2 | Add photo upload to admin actions | not_started |
 | 5.3 | Add finder/claimant names to admin reports | not_started |

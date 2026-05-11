@@ -20,6 +20,8 @@ interface ReportItem {
   createdAt: string;
   reporterName: string;
   reporterJabatan: string;
+  finderName: string | null;
+  claimantName: string | null;
 }
 
 const statusTabs = ["Semua", "PENDING", "VERIFIED", "CLAIMED", "REJECTED", "EXPIRED"];
@@ -133,6 +135,12 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
                       <td className="px-4 py-3">
                         <p className="text-sm font-medium text-slate-800">{r.reporterName}</p>
                         <p className="text-xs text-slate-400 capitalize">{r.reporterJabatan.toLowerCase().replace(/_/g, " ")}</p>
+                        {r.finderName && (
+                          <p className="text-[10px] text-green-600 mt-0.5">Penemu: {r.finderName}</p>
+                        )}
+                        {r.claimantName && (
+                          <p className="text-[10px] text-blue-600 mt-0.5">Pengklaim: {r.claimantName}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -196,6 +204,8 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
                       <span>{r.reporterName}</span>
                       <span>·</span>
                       <span>{new Date(r.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+                      {r.finderName && <span className="text-green-600">· Penemu: {r.finderName}</span>}
+                      {r.claimantName && <span className="text-blue-600">· Pengklaim: {r.claimantName}</span>}
                     </div>
                   </div>
                   <StatusBadge status={r.status} />

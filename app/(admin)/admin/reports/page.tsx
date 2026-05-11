@@ -16,6 +16,16 @@ export default async function AdminReportsPage() {
       reporter: { select: { name: true, jabatan: true } },
       category: { select: { name: true, imageUrl: true } },
       images: { take: 1, select: { url: true } },
+      foundMatches: {
+        where: { status: { in: ["APPROVED", "ITEM_RECEIVED", "COMPLETED"] } },
+        include: { finder: { select: { name: true } } },
+        take: 1,
+      },
+      claims: {
+        where: { status: { in: ["APPROVED", "COMPLETED"] } },
+        include: { claimant: { select: { name: true } } },
+        take: 1,
+      },
     },
   });
 
@@ -32,6 +42,8 @@ export default async function AdminReportsPage() {
     createdAt: r.createdAt.toISOString(),
     reporterName: r.reporter.name,
     reporterJabatan: r.reporter.jabatan as string,
+    finderName: r.foundMatches[0]?.finder?.name || null,
+    claimantName: r.claims[0]?.claimant?.name || null,
   }));
 
   const pendingCount = reports.filter((r) => r.status === "PENDING").length;
