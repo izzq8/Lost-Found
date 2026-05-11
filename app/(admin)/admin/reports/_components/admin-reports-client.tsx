@@ -23,6 +23,8 @@ interface ReportItem {
   reporterJabatan: string;
   finderName: string | null;
   claimantName: string | null;
+  handoverPhotoUrl: string | null;
+  pickupPhotoUrl: string | null;
 }
 
 const statusTabs = ["Semua", "PENDING", "VERIFIED", "CLAIMED", "REJECTED", "EXPIRED"];
@@ -133,7 +135,7 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
-                {["#", "Gambar", "Tanggal", "Pelapor", "Tipe", "Nama Barang", "Kategori", "Status", "Aksi"].map((h) => (
+                {["#", "Gambar", "Tanggal", "Pelapor", "Tipe", "Nama Barang", "Kategori", "Status", "Dok. Foto", "Aksi"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     {h}
                   </th>
@@ -143,7 +145,7 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">
                     Tidak ada laporan yang sesuai filter.
                   </td>
                 </tr>
@@ -192,6 +194,24 @@ export default function AdminReportsClient({ reports, pendingCount }: { reports:
                       <td className="px-4 py-3 text-sm text-slate-500">{r.category}</td>
                       <td className="px-4 py-3">
                         <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {(r.handoverPhotoUrl || r.pickupPhotoUrl) ? (
+                          <div className="flex gap-1">
+                            {r.handoverPhotoUrl && (
+                              <a href={r.handoverPhotoUrl} target="_blank" rel="noopener noreferrer" title="Foto Penyerahan">
+                                <img src={r.handoverPhotoUrl} alt="Penyerahan" className="w-8 h-8 rounded object-cover border border-slate-200 hover:ring-2 hover:ring-orange-300 transition-all" />
+                              </a>
+                            )}
+                            {r.pickupPhotoUrl && (
+                              <a href={r.pickupPhotoUrl} target="_blank" rel="noopener noreferrer" title="Foto Pengambilan">
+                                <img src={r.pickupPhotoUrl} alt="Pengambilan" className="w-8 h-8 rounded object-cover border border-slate-200 hover:ring-2 hover:ring-green-300 transition-all" />
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-300">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Link

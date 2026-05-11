@@ -2,8 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Camera, X, Loader2, Upload } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { nanoid } from "nanoid";
+import { uploadDocumentationPhoto } from "@/lib/actions/upload-photo.actions";
 
 interface PhotoUploadModalProps {
   open: boolean;
@@ -63,27 +62,23 @@ export function PhotoUploadModal({
     setError(null);
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const fileName = `${storagePath}/${Date.now()}-${nanoid(6)}.${ext}`;
+      // Upload via server action (uses supabaseAdmin to bypass RLS)
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("storageBucket", storageBucket);
+      formData.append("storagePath", storagePath);
 
-      const supabase = createClient();
-      const { data, error: uploadError } = await supabase.storage
-        .from(storageBucket)
-        .upload(fileName, file, { contentType: file.type, upsert: false });
+      const uploadResult = await uploadDocumentationPhoto(formData);
 
-      if (uploadError || !data) {
-        setError("Gagal mengunggah foto. Silakan coba lagi.");
+      if (!uploadResult.success || !uploadResult.url) {
+        setError(uploadResult.error || "Gagal mengunggah foto.");
         setUploading(false);
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from(storageBucket)
-        .getPublicUrl(data.path);
-
-      await onConfirm(publicUrl);
-    } catch {
-      setError("Terjadi kesalahan saat mengunggah.");
+      await onConfirm(uploadResult.url);
+    } catch (err: any) {
+      setError(err?.message || "Terjadi kesalahan saat mengunggah.");
     }
     setUploading(false);
   };

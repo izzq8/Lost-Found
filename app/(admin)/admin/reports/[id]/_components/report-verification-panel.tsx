@@ -8,6 +8,7 @@ import { verifyReport, rejectReport } from "@/lib/actions/report.actions";
 import { adminDeleteReport } from "@/lib/actions/admin.actions";
 import { adminDirectFoundMatch } from "@/lib/actions/admin-direct-found.actions";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { PhotoUploadModal } from "@/components/shared/photo-upload-modal";
 
 interface ClaimInfo {
   id: string;
@@ -46,6 +47,7 @@ export default function ReportVerificationPanel({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [directFoundLoading, setDirectFoundLoading] = useState(false);
   const [confirmDirectFound, setConfirmDirectFound] = useState(false);
+  const [showDirectFoundPhoto, setShowDirectFoundPhoto] = useState(false);
 
   const checklistItems = [
     "Data lengkap",
@@ -98,16 +100,16 @@ export default function ReportVerificationPanel({
     setDeleteLoading(false);
   };
 
-  const handleDirectFound = async () => {
+  const handleDirectFound = async (photoUrl: string) => {
     setDirectFoundLoading(true);
     setError(null);
-    const result = await adminDirectFoundMatch(reportId);
+    const result = await adminDirectFoundMatch(reportId, photoUrl);
     if (result.success) {
-      setConfirmDirectFound(false);
+      setShowDirectFoundPhoto(false);
       router.refresh();
     } else {
       setError(result.error || "Gagal memproses");
-      setConfirmDirectFound(false);
+      setShowDirectFoundPhoto(false);
     }
     setDirectFoundLoading(false);
   };
@@ -219,6 +221,7 @@ export default function ReportVerificationPanel({
   // ── VERIFIED → Show claims ────────────────────────────────────────────
   if (reportStatus === "VERIFIED") {
     return (
+      <>
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
         <h3 className="text-sm font-bold text-slate-800 mb-4">Klaim Masuk</h3>
         {claims.length === 0 ? (
@@ -297,38 +300,32 @@ export default function ReportVerificationPanel({
 
             {/* Admin Direct Found Match */}
             <div className="mt-3 pt-3 border-t border-slate-100">
-              {!confirmDirectFound ? (
-                <button
-                  onClick={() => setConfirmDirectFound(true)}
-                  disabled={directFoundLoading}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  <Package size={16} /> Saya Menemukan Barang Ini
-                </button>
-              ) : (
-                <div className="p-3 bg-green-50 rounded-xl border border-green-100 flex flex-col gap-2">
-                  <p className="text-xs text-green-800 font-medium">Konfirmasi: Anda sudah memiliki barang ini di Front Office?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setConfirmDirectFound(false)}
-                      className="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-white transition-colors cursor-pointer"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleDirectFound}
-                      disabled={directFoundLoading}
-                      className="flex-1 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      {directFoundLoading ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Konfirmasi"}
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={() => setShowDirectFoundPhoto(true)}
+                disabled={directFoundLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                <Package size={16} /> Saya Menemukan Barang Ini
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Photo Upload Modal for Direct Found */}
+      <PhotoUploadModal
+        open={showDirectFoundPhoto}
+        title="Foto Dokumentasi Barang"
+        description="Unggah foto barang yang Anda temukan sebagai bukti dokumentasi penyerahan."
+        confirmLabel="Konfirmasi Ditemukan"
+        storageBucket="report-images"
+        storagePath={`handover/${reportId}`}
+        onConfirm={async (photoUrl) => {
+          await handleDirectFound(photoUrl);
+        }}
+        onCancel={() => setShowDirectFoundPhoto(false)}
+      />
+    </>
     );
   }
 
@@ -392,3 +389,4 @@ export default function ReportVerificationPanel({
     </div>
   );
 }
+

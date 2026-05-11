@@ -8,7 +8,8 @@ import { prisma } from "@/lib/prisma/client";
  * Creates FoundMatch with status=ITEM_RECEIVED and updates report to AWAITING_PICKUP.
  */
 export async function adminDirectFoundMatch(
-  reportId: string
+  reportId: string,
+  handoverPhotoUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { user, profile } = await requireAdmin();
@@ -21,6 +22,7 @@ export async function adminDirectFoundMatch(
     if (!report) return { success: false, error: "Laporan tidak ditemukan." };
     if (report.type !== "LOST") return { success: false, error: "Fitur ini hanya untuk barang hilang." };
     if (report.status !== "VERIFIED") return { success: false, error: "Laporan harus berstatus VERIFIED." };
+    if (!handoverPhotoUrl) return { success: false, error: "Foto dokumentasi wajib diunggah." };
 
     await prisma.$transaction(async (tx) => {
       // Create FoundMatch directly at ITEM_RECEIVED (admin already has the item)
@@ -32,6 +34,7 @@ export async function adminDirectFoundMatch(
           status: "ITEM_RECEIVED",
           approvedAt: new Date(),
           itemReceivedAt: new Date(),
+          handoverPhotoUrl,
         },
       });
 
