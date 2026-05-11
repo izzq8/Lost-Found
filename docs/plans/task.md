@@ -15,9 +15,9 @@
 | 3.3 | Add cancel & edit to found item detail page | done |
 | 4.1 | Owner approval for found match (hybrid model) | done |
 | 4.2 | Admin "Saya Menemukan Barang Ini" | done |
-| 5.1 | Prisma schema migration (photo fields) | not_started |
-| 5.2 | Add photo upload to admin actions | not_started |
-| 5.3 | Add finder/claimant names to admin reports | not_started |
+| 5.1 | Prisma schema migration (photo fields) | done |
+| 5.2 | Add photo upload to admin actions | done |
+| 5.3 | Add finder/claimant names to admin reports | done |
 | 5.4 | Extend export with finder/claimant & photos | not_started |
 | 6.1 | Search & filter for lost/found items | not_started |
 | 6.2 | Manual report for registered users | not_started |
