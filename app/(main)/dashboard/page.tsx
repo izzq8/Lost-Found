@@ -116,10 +116,16 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
-        <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
-        <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
-        <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
+      <div className="flex sm:grid sm:grid-cols-3 gap-3 md:gap-5 overflow-x-auto pb-2 sm:pb-0 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
+        </div>
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
+        </div>
+        <div className="w-[240px] sm:w-auto shrink-0 snap-center">
+          <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
+        </div>
       </div>
 
       {/* Mobile Quick Actions - hanya tampil di mobile */}

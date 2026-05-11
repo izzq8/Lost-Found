@@ -61,21 +61,6 @@ export default async function MyReportsPage({
         </div>
       )}
 
-      {/* CTA Buttons */}
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/dashboard/report/lost"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors shadow-sm shadow-orange-200"
-        >
-          <PenLine size={15} /> Lapor Barang Hilang
-        </Link>
-        <Link
-          href="/dashboard/report/found"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-50 text-orange-700 text-sm font-semibold hover:bg-orange-100 transition-colors"
-        >
-          <PenLine size={15} /> Lapor Barang Ditemukan
-        </Link>
-      </div>
 
       {/* Reports List */}
       {reports.length === 0 ? (
