@@ -101,7 +101,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
         <StatCard icon={Package} value={statLost} label="Barang Hilang" color="#EA580C" />
         <StatCard icon={Search} value={statFound} label="Barang Ditemukan" color="#F97316" />
         <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
