@@ -76,7 +76,22 @@ export default async function DashboardPage() {
         icon={LayoutDashboard}
         title={`Selamat datang, ${profile.name.split(' ')[0]}!`}
         subtitle={todayStr}
-      />
+      >
+        <Link
+          href="/dashboard/report/lost"
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <Package size={16} className="text-red-500" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Lapor Hilang</span>
+        </Link>
+        <Link
+          href="/dashboard/report/found"
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <Search size={16} className="text-green-600" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Lapor Ditemukan</span>
+        </Link>
+      </PageHero>
 
       {/* Announcement Alert */}
       {activeAnnouncement && (
@@ -107,33 +122,6 @@ export default async function DashboardPage() {
         <StatCard icon={FileText} value={statMyReports} label="Laporan Saya" color="#C2410C" />
       </div>
 
-      {/* Mobile Quick Actions - hanya tampil di mobile */}
-      <div className="grid grid-cols-2 gap-3 lg:hidden">
-        <Link
-          href="/dashboard/report/lost"
-          className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-        >
-          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-            <Package size={18} className="text-red-500" />
-          </div>
-          <div>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>Lapor Hilang</p>
-            <p style={{ fontSize: '11px', color: '#94A3B8' }}>Buat laporan</p>
-          </div>
-        </Link>
-        <Link
-          href="/dashboard/report/found"
-          className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-        >
-          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <Search size={18} className="text-green-600" />
-          </div>
-          <div>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>Lapor Ditemukan</p>
-            <p style={{ fontSize: '11px', color: '#94A3B8' }}>Buat laporan</p>
-          </div>
-        </Link>
-      </div>
 
       {/* Recent Lost Items */}
       <div>

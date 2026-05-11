@@ -5,7 +5,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
   LayoutDashboard, Users, FileText, ClipboardList, KeyRound,
-  CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp,
+  CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp, Megaphone
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -103,7 +103,22 @@ export default async function AdminDashboardPage() {
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-8 pb-10">
-      <PageHero variant="large" icon={LayoutDashboard} title="Dashboard Admin" subtitle={`Selamat datang kembali, ${profile.name}!`} />
+      <PageHero variant="large" icon={LayoutDashboard} title="Dashboard Admin" subtitle={`Selamat datang kembali, ${profile.name}!`}>
+        <Link
+          href="/admin/reports"
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <FileText size={16} className="text-orange-600" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Tinjau Laporan</span>
+        </Link>
+        <Link
+          href="/admin/announcements"
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
+        >
+          <Megaphone size={16} className="text-blue-600" strokeWidth={2.5} />
+          <span className="text-sm font-bold text-slate-800">Pengumuman</span>
+        </Link>
+      </PageHero>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
