@@ -111,13 +111,7 @@ export default async function AdminDashboardPage() {
           <FileText size={16} className="text-orange-600" strokeWidth={2.5} />
           <span className="text-sm font-bold text-slate-800">Tinjau Laporan</span>
         </Link>
-        <Link
-          href="/admin/announcements"
-          className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"
-        >
-          <Megaphone size={16} className="text-blue-600" strokeWidth={2.5} />
-          <span className="text-sm font-bold text-slate-800">Pengumuman</span>
-        </Link>
+        {/* Fitur Pengumuman di-disable sementara (Deferred) sebagai saran pengembangan ke depan */}
       </PageHero>
 
       {/* Stats */}
