@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Eye, UserCheck, Search, Trash2, Package } from "lucide-react";
 import { verifyReport, rejectReport } from "@/lib/actions/report.actions";
 import { adminDeleteReport } from "@/lib/actions/admin.actions";
+import { adminDirectFoundMatch } from "@/lib/actions/admin-direct-found.actions";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 interface ClaimInfo {
@@ -43,6 +44,8 @@ export default function ReportVerificationPanel({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [directFoundLoading, setDirectFoundLoading] = useState(false);
+  const [confirmDirectFound, setConfirmDirectFound] = useState(false);
 
   const checklistItems = [
     "Data lengkap",
@@ -93,6 +96,20 @@ export default function ReportVerificationPanel({
       setConfirmDelete(false);
     }
     setDeleteLoading(false);
+  };
+
+  const handleDirectFound = async () => {
+    setDirectFoundLoading(true);
+    setError(null);
+    const result = await adminDirectFoundMatch(reportId);
+    if (result.success) {
+      setConfirmDirectFound(false);
+      router.refresh();
+    } else {
+      setError(result.error || "Gagal memproses");
+      setConfirmDirectFound(false);
+    }
+    setDirectFoundLoading(false);
   };
 
   // ── PENDING → Verification Panel ─────────────────────────────────────
@@ -277,6 +294,38 @@ export default function ReportVerificationPanel({
             >
               <Search size={16} /> Lihat Semua Found Match
             </Link>
+
+            {/* Admin Direct Found Match */}
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              {!confirmDirectFound ? (
+                <button
+                  onClick={() => setConfirmDirectFound(true)}
+                  disabled={directFoundLoading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <Package size={16} /> Saya Menemukan Barang Ini
+                </button>
+              ) : (
+                <div className="p-3 bg-green-50 rounded-xl border border-green-100 flex flex-col gap-2">
+                  <p className="text-xs text-green-800 font-medium">Konfirmasi: Anda sudah memiliki barang ini di Front Office?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmDirectFound(false)}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-white transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleDirectFound}
+                      disabled={directFoundLoading}
+                      className="flex-1 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {directFoundLoading ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Konfirmasi"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -10,9 +10,9 @@
 | 1.6 | Change hero subtitles | done |
 | 2.1 | Replace window.location.reload() with optimistic update | done |
 | 2.2 | Change report limiter to daily limit | done |
-| 3.1 | Create cancel claim server action | not_started |
-| 3.2 | Add cancel & edit buttons to my-claims page | not_started |
-| 3.3 | Add cancel & edit to found item detail page | not_started |
+| 3.1 | Create cancel claim server action | done |
+| 3.2 | Add cancel & edit buttons to my-claims page | done |
+| 3.3 | Add cancel & edit to found item detail page | done |
 | 4.1 | Owner approval for found match (hybrid model) | not_started |
 | 4.2 | Admin "Saya Menemukan Barang Ini" | not_started |
 | 5.1 | Prisma schema migration (photo fields) | not_started |

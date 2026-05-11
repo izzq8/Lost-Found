@@ -10,6 +10,7 @@ import ReportActionsClient from "@/components/shared/report-actions-client";
 import { BackButton } from "@/components/shared/back-button";
 import { Package, MapPin, Calendar, Clock, Info, FileText, ArrowLeft, Search, CheckCircle2, Truck } from "lucide-react";
 import { ImageGallery } from "@/components/shared/image-gallery";
+import OwnerFoundMatchActions from "./_components/owner-found-match-actions";
 
 export default async function LostItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, profile } = await requireAuth();
@@ -31,6 +32,7 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
         where: { status: { in: ["PENDING", "APPROVED", "ITEM_RECEIVED", "COMPLETED"] } },
         include: {
           finder: { select: { id: true, name: true } },
+          images: { select: { url: true } },
         },
         orderBy: { createdAt: "desc" },
       },
@@ -69,6 +71,11 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
     !isOwner &&
     !hasApprovedMatch &&
     !userActiveMatch;
+
+  // Pending found matches for owner review (hybrid model)
+  const pendingFoundMatches = isOwner
+    ? allFoundMatches.filter(fm => fm.status === "PENDING")
+    : [];
 
   return (
     <div className="flex flex-col gap-6 pb-12">
@@ -244,14 +251,27 @@ export default async function LostItemDetailPage({ params }: { params: Promise<{
           {/* Tindakan / Found Match Form */}
           <div className="flex flex-col gap-4">
             {isOwner ? (
-              <ReportActionsClient
-                reportId={report.id}
-                reportStatus={report.status}
-                reportType="LOST"
-                isOwner={isOwner}
-                hasActiveFoundMatch={hasApprovedMatch}
-                userHasPendingMatch={!!userActiveMatch}
-              />
+              <>
+                <ReportActionsClient
+                  reportId={report.id}
+                  reportStatus={report.status}
+                  reportType="LOST"
+                  isOwner={isOwner}
+                  hasActiveFoundMatch={hasApprovedMatch}
+                  userHasPendingMatch={!!userActiveMatch}
+                />
+                {pendingFoundMatches.length > 0 && (
+                  <OwnerFoundMatchActions
+                    matches={pendingFoundMatches.map(fm => ({
+                      id: fm.id,
+                      finderName: fm.finder.name,
+                      description: fm.description,
+                      createdAt: fm.createdAt.toISOString(),
+                      images: fm.images,
+                    }))}
+                  />
+                )}
+              </>
             ) : canShowFoundMatchForm ? (
               <FoundMatchForm reportId={report.id} reportItemName={report.itemName} />
             ) : userActiveMatch?.status === "APPROVED" ? (
