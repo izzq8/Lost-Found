@@ -161,6 +161,7 @@ export default async function AdminClaimDetailPage({ params }: { params: Promise
           <ClaimActionPanel
             claimId={claim.id}
             claimStatus={claim.status}
+            handoverPhotoUrl={claim.handoverPhotoUrl}
           />
         </div>
       </div>
