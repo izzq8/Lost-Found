@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma/client";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 
@@ -136,6 +137,13 @@ export async function registerAction(
     return { error: "Terjadi kesalahan internal server" };
   }
 
-  // 6. Redirect on success
-  redirect("/login?registered=true");
+  // 6. Sign in the user automatically
+  const supabase = await createServerSupabaseClient();
+  await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  // 7. Redirect to dashboard
+  redirect("/dashboard");
 }

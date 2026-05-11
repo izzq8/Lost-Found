@@ -162,28 +162,28 @@ export default async function MyFoundMatchesPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-orange-600">
-                        Laporan Penemuan
-                      </span>
-                      <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors">
-                        {fm.report.itemName}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <StatusBadge status={fm.status} className="shrink-0" />
-                      {isApproved && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold animate-pulse">
-                          Segera Serahkan!
-                        </span>
-                      )}
-                      <ArrowRight
-                        size={14}
-                        className="text-slate-300 group-hover:text-orange-500 transition-colors hidden sm:block"
-                      />
-                    </div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-orange-600">
+                      Laporan Penemuan
+                    </span>
+                    <h3 className="font-semibold text-slate-800 text-sm leading-snug group-hover:text-orange-600 transition-colors truncate">
+                      {fm.report.itemName}
+                    </h3>
                   </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center items-end gap-2 shrink-0">
+                    <StatusBadge status={fm.status} className="shrink-0" />
+                    {isApproved && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold animate-pulse">
+                        Segera Serahkan!
+                      </span>
+                    )}
+                    <ArrowRight
+                      size={14}
+                      className="text-slate-300 group-hover:text-orange-500 transition-colors hidden sm:block"
+                    />
+                  </div>
+                </div>
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                     <div className="flex items-center gap-1 text-slate-500">

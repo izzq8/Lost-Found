@@ -32,12 +32,9 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
 
   if (!report || report.type !== "FOUND") return notFound();
 
-  // Aturan Visibilitas Foto
+
+  // Aturan Visibilitas Foto (isOwner is needed for queries below)
   const isOwner = report.reporterId === user.id;
-  const isAdmin = profile.role === "ADMIN";
-  const canSeeRealPhoto = isOwner || isAdmin;
-  const hasImages = report.images.length > 0;
-  const mainImageUrl = canSeeRealPhoto && hasImages ? report.images[0].url : null;
 
   // Parallel: check claim eligibility + user's own claim at the same time
   let userCanClaim = false;
@@ -56,6 +53,12 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  // Aturan Visibilitas Foto
+  const isAdmin = profile.role === "ADMIN";
+  const canSeeRealPhoto = isOwner || isAdmin || (userClaim && ["APPROVED", "COMPLETED"].includes(userClaim.status));
+  const hasImages = report.images.length > 0;
+  const mainImageUrl = canSeeRealPhoto && hasImages ? report.images[0].url : null;
 
   if (!isOwner && report.status === "VERIFIED" && !approvedClaim) {
     const existingClaim = await prisma.claim.findFirst({
