@@ -42,10 +42,10 @@ export function StatusBadge({ status, className = "" }: { status: string; classN
 
   return (
     <span 
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${className}`}
-      style={{ fontSize: '12px', fontWeight: 600, lineHeight: '16px' }}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-semibold ${config.bg} ${config.text} ${className}`}
+      style={!className.includes('text-') ? { fontSize: '12px', lineHeight: '16px' } : undefined}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${config.dot}`} />
       {label}
     </span>
   );
