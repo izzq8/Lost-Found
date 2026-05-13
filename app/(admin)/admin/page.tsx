@@ -5,7 +5,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
   LayoutDashboard, Users, FileText, ClipboardList, KeyRound,
-  CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp, Megaphone
+  CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp
 } from "lucide-react";
 import AdminDashboardChartsLazy from "./_components/admin-dashboard-charts-lazy";
 export const metadata = { title: "Dashboard Admin — LostFound SMKFN" };
@@ -16,6 +16,7 @@ export default async function AdminDashboardPage() {
   // ── DATA FETCHING ──────────────────────────────────────────────────────
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const chartStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
   const [
     activeUsers,
@@ -41,20 +42,29 @@ export default async function AdminDashboardPage() {
     prisma.report.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        itemName: true,
+        createdAt: true,
         reporter: { select: { name: true, jabatan: true } },
-        category: { select: { name: true } },
       },
     }),
     prisma.auditLog.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
-      include: { actor: { select: { name: true } } },
+      select: {
+        id: true,
+        action: true,
+        createdAt: true,
+        actor: { select: { name: true } },
+      },
     }),
     // Last 6 months reports for chart
     prisma.report.findMany({
       where: {
-        createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) },
+        createdAt: { gte: chartStart },
       },
       select: { type: true, createdAt: true },
     }),

@@ -1,12 +1,13 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma/client";
+import { cache } from "react";
 
 /**
  * Verifikasi bahwa request berasal dari user yang sudah login dan aktif.
  * Mengembalikan auth user + profile dari database.
  * Throw error jika tidak terautentikasi atau akun dinonaktifkan.
  */
-export async function requireAuth() {
+export const requireAuth = cache(async function requireAuth() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -29,13 +30,13 @@ export async function requireAuth() {
   }
 
   return { user, profile };
-}
+});
 
 /**
  * Verifikasi bahwa request berasal dari admin yang aktif.
  * Throw error jika bukan admin.
  */
-export async function requireAdmin() {
+export const requireAdmin = cache(async function requireAdmin() {
   const { user, profile } = await requireAuth();
 
   if (profile.role !== "ADMIN") {
@@ -43,4 +44,4 @@ export async function requireAdmin() {
   }
 
   return { user, profile };
-}
+});

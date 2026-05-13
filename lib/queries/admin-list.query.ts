@@ -1,6 +1,7 @@
 import type {
   AccountStatus,
   ClaimStatus,
+  FoundMatchStatus,
   Jabatan,
   Prisma,
   ReportStatus,
@@ -28,6 +29,14 @@ const CLAIM_STATUS_TABS = [
   "REJECTED",
   "COMPLETED",
 ] as const satisfies readonly ClaimStatus[];
+
+const FOUND_MATCH_STATUS_TABS = [
+  "PENDING",
+  "APPROVED",
+  "ITEM_RECEIVED",
+  "COMPLETED",
+  "REJECTED",
+] as const satisfies readonly FoundMatchStatus[];
 
 function parsePage(page: string | number | undefined) {
   const parsed = Number(page ?? 1);
@@ -90,6 +99,20 @@ export interface AdminClaimListItem {
   handoverPhotoUrl: string | null;
 }
 
+export interface AdminFoundMatchListItem {
+  id: string;
+  status: string;
+  finderName: string;
+  finderJabatan: string;
+  itemName: string;
+  ownerName: string;
+  category: string;
+  reportImageUrl: string | null;
+  matchImageUrl: string | null;
+  categoryImageUrl: string | null;
+  createdAt: string;
+}
+
 export interface AdminUserListItem {
   id: string;
   name: string;
@@ -114,9 +137,109 @@ export interface AdminClaimsResult extends PaginatedResult<AdminClaimListItem> {
   filters: { q: string; status: string; categories: string[] };
 }
 
+export interface AdminFoundMatchesResult
+  extends PaginatedResult<AdminFoundMatchListItem> {
+  categories: { name: string }[];
+  counts: Record<string, number>;
+  filters: { q: string; status: string; categories: string[] };
+}
+
 export interface AdminUsersResult extends PaginatedResult<AdminUserListItem> {
   counts: { active: number; inactive: number };
   filters: { q: string; status: string; role: string; jabatan: string };
+}
+
+export async function getAdminFoundMatchesList({
+  page,
+  q,
+  status,
+  category,
+  pageSize = ADMIN_LIST_PAGE_SIZE,
+}: AdminListFilters): Promise<AdminFoundMatchesResult> {
+  const currentPage = parsePage(page);
+  const search = (q ?? "").trim();
+  const selectedCategories = parseCsv(category);
+  const selectedStatus = emptyToUndefined(status) as FoundMatchStatus | undefined;
+
+  const baseWhere: Prisma.FoundMatchWhereInput = {
+    ...(selectedCategories.length > 0
+      ? { report: { category: { name: { in: selectedCategories } } } }
+      : {}),
+    ...(search
+      ? {
+          OR: [
+            { finder: { name: { contains: search, mode: "insensitive" } } },
+            { report: { itemName: { contains: search, mode: "insensitive" } } },
+            { report: { reporter: { name: { contains: search, mode: "insensitive" } } } },
+          ],
+        }
+      : {}),
+  };
+  const where: Prisma.FoundMatchWhereInput = {
+    ...baseWhere,
+    ...(selectedStatus ? { status: selectedStatus } : {}),
+  };
+
+  const [totalItems, matches, categories, allCount, ...statusCounts] =
+    await Promise.all([
+      prisma.foundMatch.count({ where }),
+      prisma.foundMatch.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          finder: { select: { name: true, jabatan: true } },
+          report: {
+            select: {
+              itemName: true,
+              reporter: { select: { name: true } },
+              category: { select: { name: true, imageUrl: true } },
+              images: { take: 1, select: { url: true } },
+            },
+          },
+          images: { take: 1, select: { url: true } },
+        },
+      }),
+      prisma.category.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
+      prisma.foundMatch.count({ where: baseWhere }),
+      ...FOUND_MATCH_STATUS_TABS.map((tabStatus) =>
+        prisma.foundMatch.count({ where: { ...baseWhere, status: tabStatus } })
+      ),
+    ]);
+
+  return {
+    items: matches.map((m) => ({
+      id: m.id,
+      status: m.status,
+      finderName: m.finder.name,
+      finderJabatan: m.finder.jabatan,
+      itemName: m.report.itemName,
+      ownerName: m.report.reporter.name,
+      category: m.report.category.name,
+      reportImageUrl: m.report.images[0]?.url ?? null,
+      matchImageUrl: m.images[0]?.url ?? null,
+      categoryImageUrl: m.report.category.imageUrl,
+      createdAt: m.createdAt.toISOString(),
+    })),
+    categories,
+    counts: Object.fromEntries([
+      ["Semua", allCount],
+      ...FOUND_MATCH_STATUS_TABS.map((tabStatus, index) => [
+        tabStatus,
+        statusCounts[index] ?? 0,
+      ]),
+    ]),
+    filters: {
+      q: search,
+      status: selectedStatus ?? "Semua",
+      categories: selectedCategories,
+    },
+    pagination: buildPaginationMeta({ page: currentPage, pageSize, totalItems }),
+  };
 }
 
 export async function getAdminReportsList({
@@ -393,4 +516,3 @@ export async function getAdminUsersList({
     pagination: buildPaginationMeta({ page: currentPage, pageSize, totalItems }),
   };
 }
-
