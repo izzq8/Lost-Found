@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { Package } from "lucide-react";
+import { isHttpImageUrl } from "@/lib/utils/image-client";
 
 interface CategoryIconProps {
   name: string;
@@ -24,23 +26,23 @@ export function CategoryIcon({
   className = "",
   fill = false,
 }: CategoryIconProps) {
-  const isValidUrl =
-    imageUrl &&
-    (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"));
+  const validImageUrl = isHttpImageUrl(imageUrl) ? imageUrl : null;
 
-  if (isValidUrl) {
+  if (validImageUrl) {
     if (fill) {
       return (
-        <img
-          src={imageUrl}
+        <Image
+          src={validImageUrl}
           alt={name}
+          fill
+          sizes="96px"
           className={`w-full h-full object-contain ${className}`}
         />
       );
     }
     return (
-      <img
-        src={imageUrl}
+      <Image
+        src={validImageUrl}
         alt={name}
         width={size}
         height={size}

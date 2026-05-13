@@ -11,7 +11,7 @@ interface ItemCardProps {
     status: string;
     itemName: string;
     location: string;
-    date: Date;
+    date: Date | string;
     category: {
       name: string;
       imageUrl?: string;
@@ -29,8 +29,7 @@ export function ItemCard({ report }: ItemCardProps) {
       href={`/dashboard/${routePrefix}/${report.id}`}
       className="rounded-xl md:rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 block group"
       style={{ 
-        background: 'rgba(255, 255, 255, 0.5)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(255, 255, 255, 0.82)',
         border: '1px solid rgba(255, 255, 255, 0.6)',
         boxShadow: '0 4px 16px rgba(234, 88, 12, 0.04)'
       }}

@@ -7,19 +7,7 @@ import {
   LayoutDashboard, Users, FileText, ClipboardList, KeyRound,
   CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp, Megaphone
 } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const AdminDashboardCharts = dynamic(
-  () => import("./_components/admin-dashboard-charts"),
-  {
-    loading: () => (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
-        <div className="lg:col-span-2 h-80 bg-slate-200 rounded-2xl" />
-        <div className="h-80 bg-slate-200 rounded-2xl" />
-      </div>
-    ),
-  }
-);
+import AdminDashboardChartsLazy from "./_components/admin-dashboard-charts-lazy";
 export const metadata = { title: "Dashboard Admin — LostFound SMKFN" };
 
 export default async function AdminDashboardPage() {
@@ -136,7 +124,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Charts */}
-      <AdminDashboardCharts monthlyData={monthlyData} statusData={statusData} />
+      <AdminDashboardChartsLazy monthlyData={monthlyData} statusData={statusData} />
 
       {/* Bottom: Table + Activity */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

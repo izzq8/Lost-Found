@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Search, ToggleLeft, ToggleRight, Loader2, Trash2, Filter } from "lucide-react";
+import { FormEvent, useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, Search, ToggleLeft, ToggleRight, Loader2, Trash2, Filter } from "lucide-react";
 import { deactivateUser, reactivateUser } from "@/lib/actions/user.actions";
 import { adminDeleteUser } from "@/lib/actions/admin.actions";
+import type { PaginationMeta } from "@/lib/types/pagination";
 
 interface UserItem {
   id: string;
@@ -20,31 +21,53 @@ interface UserItem {
 export default function AdminUsersClient({
   users,
   counts,
+  filters,
+  pagination,
   currentUserId,
 }: {
   users: UserItem[];
   counts: { active: number; inactive: number };
+  filters: { q: string; status: string; role: string; jabatan: string };
+  pagination: PaginationMeta;
   currentUserId: string;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"ACTIVE" | "DEACTIVATED">("ACTIVE");
-  const [search, setSearch] = useState("");
-  const [jabatanFilter, setJabatanFilter] = useState("all");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState(filters.q);
+  const [jabatanFilter, setJabatanFilter] = useState(filters.jabatan);
+  const [roleFilter, setRoleFilter] = useState(filters.role);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
 
-  const filtered = users
-    .filter((u) => u.status === tab)
-    .filter(
-      (u) =>
-        !search ||
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase())
-    )
-    .filter((u) => jabatanFilter === "all" || u.jabatan === jabatanFilter)
-    .filter((u) => roleFilter === "all" || u.role === roleFilter);
+  useEffect(() => {
+    setSearch(filters.q);
+    setJabatanFilter(filters.jabatan);
+    setRoleFilter(filters.role);
+  }, [filters.q, filters.jabatan, filters.role]);
+
+  const updateParams = (
+    updates: Record<string, string | undefined>,
+    { resetPage = true }: { resetPage?: boolean } = {}
+  ) => {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value && value !== "all") next.set(key, value);
+      else next.delete(key);
+    }
+    if (resetPage) next.delete("page");
+    const query = next.toString();
+    startTransition(() => {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    });
+  };
+
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updateParams({ q: search.trim() || undefined });
+  };
 
   const handleToggle = async (userId: string, currentStatus: string) => {
     setLoadingId(userId);
@@ -78,13 +101,13 @@ export default function AdminUsersClient({
         {(["ACTIVE", "DEACTIVATED"] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => updateParams({ status: t })}
             className={`px-3 py-2.5 cursor-pointer transition-colors ${
-              tab === t
+              filters.status === t
                 ? "border-b-2 border-orange-600 text-orange-600"
                 : "text-slate-500 hover:text-slate-700"
             }`}
-            style={{ fontSize: "14px", fontWeight: tab === t ? 600 : 500 }}
+            style={{ fontSize: "14px", fontWeight: filters.status === t ? 600 : 500 }}
           >
             {t === "ACTIVE" ? `Aktif (${counts.active})` : `Nonaktif (${counts.inactive})`}
           </button>
@@ -92,7 +115,7 @@ export default function AdminUsersClient({
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSearch}>
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -103,11 +126,16 @@ export default function AdminUsersClient({
             className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
           />
         </div>
+      </form>
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative">
           <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <select
             value={jabatanFilter}
-            onChange={(e) => setJabatanFilter(e.target.value)}
+            onChange={(e) => {
+              setJabatanFilter(e.target.value);
+              updateParams({ jabatan: e.target.value });
+            }}
             className="h-10 pl-8 pr-8 rounded-xl border border-slate-200 bg-white text-sm outline-none appearance-none cursor-pointer focus:border-orange-500"
           >
             <option value="all">Semua Jabatan</option>
@@ -122,7 +150,10 @@ export default function AdminUsersClient({
           <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <select
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              updateParams({ role: e.target.value });
+            }}
             className="h-10 pl-8 pr-8 rounded-xl border border-slate-200 bg-white text-sm outline-none appearance-none cursor-pointer focus:border-orange-500"
           >
             <option value="all">Semua Role</option>
@@ -150,16 +181,16 @@ export default function AdminUsersClient({
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
                     Tidak ada user yang sesuai filter.
                   </td>
                 </tr>
               ) : (
-                filtered.map((u, i) => (
+                users.map((u, i) => (
                   <tr key={u.id} className="border-t border-slate-100 hover:bg-orange-50/30 transition-colors">
-                    <td className="px-4 py-3 text-sm text-slate-400">{i + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{(pagination.page - 1) * pagination.pageSize + i + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div
@@ -196,7 +227,7 @@ export default function AdminUsersClient({
                     <td className="px-4 py-3">
                       {loadingId === u.id ? (
                         <Loader2 size={18} className="animate-spin text-slate-400" />
-                      ) : tab === "ACTIVE" ? (
+                      ) : filters.status === "ACTIVE" ? (
                         <button
                           onClick={() => handleToggle(u.id, u.status)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer transition-colors"
@@ -252,12 +283,12 @@ export default function AdminUsersClient({
 
         {/* Mobile Card List */}
         <div className="md:hidden divide-y divide-slate-50">
-          {filtered.length === 0 ? (
+          {users.length === 0 ? (
             <div className="px-4 py-12 text-center text-sm text-slate-400">
               Tidak ada user yang sesuai filter.
             </div>
           ) : (
-            filtered.map((u) => (
+            users.map((u) => (
               <div key={u.id} className="flex items-center gap-3 p-4">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
@@ -278,7 +309,7 @@ export default function AdminUsersClient({
                 <div className="shrink-0">
                   {loadingId === u.id ? (
                     <Loader2 size={18} className="animate-spin text-slate-400" />
-                  ) : tab === "ACTIVE" ? (
+                  ) : filters.status === "ACTIVE" ? (
                     <button onClick={() => handleToggle(u.id, u.status)} className="p-2 rounded-lg hover:bg-red-50 text-red-500 cursor-pointer" title="Nonaktifkan">
                       <ToggleRight size={18} />
                     </button>
@@ -320,6 +351,32 @@ export default function AdminUsersClient({
           )}
         </div>
       </div>
+
+      {pagination.totalPages > 1 && (
+        <div className={`flex items-center justify-center gap-2 pt-1 ${isPending ? "opacity-60" : ""}`}>
+          <button
+            type="button"
+            onClick={() => updateParams({ page: String(pagination.page - 1) }, { resetPage: false })}
+            disabled={!pagination.hasPreviousPage}
+            className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+            aria-label="Halaman sebelumnya"
+          >
+            <ChevronLeft size={16} className="text-slate-500" />
+          </button>
+          <span className="text-sm text-slate-600 font-medium">
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => updateParams({ page: String(pagination.page + 1) }, { resetPage: false })}
+            disabled={!pagination.hasNextPage}
+            className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+            aria-label="Halaman berikutnya"
+          >
+            <ChevronRight size={16} className="text-slate-500" />
+          </button>
+        </div>
+      )}
     </>
   );
 }

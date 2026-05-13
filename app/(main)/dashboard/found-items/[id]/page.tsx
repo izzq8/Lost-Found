@@ -10,6 +10,7 @@ import { BackButton } from "@/components/shared/back-button";
 import { Package, MapPin, Calendar, Clock, Info, FileText, ArrowLeft, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
 import { ImageGallery } from "@/components/shared/image-gallery";
 import CancelClaimButton from "@/app/(main)/dashboard/my-claims/_components/cancel-claim-button";
+import { canViewReportByVisibility } from "@/lib/utils/report-visibility";
 
 export default async function FoundItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, profile } = await requireAuth();
@@ -31,6 +32,16 @@ export default async function FoundItemDetailPage({ params }: { params: Promise<
   });
 
   if (!report || report.type !== "FOUND") return notFound();
+  if (
+    !canViewReportByVisibility({
+      status: report.status,
+      reporterId: report.reporterId,
+      viewerId: user.id,
+      viewerRole: profile.role,
+    })
+  ) {
+    return notFound();
+  }
 
 
   // Aturan Visibilitas Foto (isOwner is needed for queries below)

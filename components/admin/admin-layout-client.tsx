@@ -101,10 +101,9 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
 
   // ── REALTIME SUBSCRIPTIONS ──────────────────────────────────────────────
   useRealtimeRefresh({
-    tables: ["reports", "claims", "found_matches", "notifications"],
+    tables: [{ table: "notifications", event: "INSERT", filter: `user_id=eq.${currentUser.id}` }],
     onEvent: () => router.refresh(),
     debounceMs: 1500,
-    notificationUserId: currentUser.id,
   });
 
   const isActive = (href: string) => {

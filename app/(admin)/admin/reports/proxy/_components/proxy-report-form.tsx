@@ -7,10 +7,17 @@ import {
   User, Package, MapPin, Calendar, Clock, FileText,
   ImagePlus, X, Loader2, Tag, Search, CheckCircle,
 } from "lucide-react";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 interface CategoryItem {
   id: string;
   name: string;
+}
+
+interface ImagePreview {
+  file: File;
+  previewUrl: string;
 }
 
 export default function ProxyReportForm({ categories }: { categories: CategoryItem[] }) {
@@ -20,8 +27,9 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<ImagePreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageFilesRef = useRef<ImagePreview[]>([]);
 
   // User search
   const [userSearch, setUserSearch] = useState("");
@@ -45,14 +53,40 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
     return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
   }, [userSearch]);
 
-  const handleImageAdd = (files: FileList | null) => {
+  useEffect(() => {
+    imageFilesRef.current = imageFiles;
+  }, [imageFiles]);
+
+  useEffect(() => {
+    return () => {
+      imageFilesRef.current.forEach((image) => revokeImagePreview(image.previewUrl));
+    };
+  }, []);
+
+  const handleImageAdd = async (files: FileList | null) => {
     if (!files) return;
-    const newFiles = Array.from(files).slice(0, 3 - imageFiles.length);
+    const newFiles: ImagePreview[] = [];
+    const errors: string[] = [];
+    for (const file of Array.from(files).slice(0, 3 - imageFiles.length)) {
+      try {
+        const optimizedFile = await prepareImageForUpload(file);
+        newFiles.push({
+          file: optimizedFile,
+          previewUrl: createImagePreview(optimizedFile),
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+      }
+    }
     setImageFiles((prev) => [...prev, ...newFiles].slice(0, 3));
+    setError(errors.length > 0 ? errors.join(" ") : null);
   };
 
   const removeImage = (index: number) => {
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => {
+      revokeImagePreview(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +105,7 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
     formData.set("targetUserId", selectedUser.id);
 
     formData.delete("images");
-    imageFiles.forEach((f) => formData.append("images", f));
+    imageFiles.forEach((image) => formData.append("images", image.file));
 
     const result = await createProxyReport(formData);
     if (result.success) {
@@ -109,7 +143,12 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
           </button>
           <button
             type="button"
-            onClick={() => { setSuccess(false); setSelectedUser(null); setImageFiles([]); }}
+            onClick={() => {
+              imageFiles.forEach((image) => revokeImagePreview(image.previewUrl));
+              setSuccess(false);
+              setSelectedUser(null);
+              setImageFiles([]);
+            }}
             className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             Buat Lagi
@@ -307,9 +346,14 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
           <h3 className="text-sm font-bold text-slate-800">Foto (opsional, maks. 3)</h3>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {imageFiles.map((file, i) => (
+          {imageFiles.map((image, i) => (
             <div key={i} className="w-20 h-20 rounded-xl border border-slate-200 relative overflow-hidden group">
-              <img src={URL.createObjectURL(file)} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+              <OptimizedThumbnail
+                src={image.previewUrl}
+                alt={`Preview ${i + 1}`}
+                className="absolute inset-0"
+                sizes="80px"
+              />
               <button
                 type="button"
                 onClick={() => removeImage(i)}

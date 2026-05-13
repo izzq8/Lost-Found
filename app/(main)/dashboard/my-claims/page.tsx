@@ -5,6 +5,7 @@ import { ShieldCheck, FileText, Calendar, Info, ArrowRight, CheckCircle2, Packag
 import Link from "next/link";
 import { StatusBadge } from "@/components/shared/status-badge";
 import CancelClaimButton from "./_components/cancel-claim-button";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
 
 export const metadata = {
   title: "Riwayat Klaim Saya — LostFound SMKFN",
@@ -75,22 +76,23 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
               href={`/dashboard/found-items/${claim.reportId}`}
               className="rounded-xl md:rounded-2xl p-4 flex gap-4 items-start transition-all hover:shadow-md cursor-pointer group"
               style={{
-                background: "rgba(255,255,255,0.5)",
-                backdropFilter: "blur(12px)",
+                background: "rgba(255,255,255,0.82)",
                 border: "1px solid rgba(255,255,255,0.7)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
               }}
             >
               {/* Thumbnail */}
-              <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center relative">
+              <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 relative">
                 <div className={`absolute top-0 left-0 w-full h-0.5 ${claim.status === "APPROVED" ? "bg-green-500" : claim.status === "REJECTED" ? "bg-red-500" : "bg-orange-500"}`} />
-                {claim.report.images.length > 0 ? (
-                  <img src={claim.report.images[0].url} alt="" className={`w-full h-full object-cover ${claim.status === "PENDING" || claim.status === "REJECTED" ? "blur-sm" : ""}`} />
-                ) : claim.report.category.imageUrl && claim.report.category.imageUrl.startsWith("http") ? (
-                  <img src={claim.report.category.imageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Package size={24} className="text-slate-300" />
-                )}
+                <OptimizedThumbnail
+                  src={claim.report.images[0]?.url}
+                  fallbackSrc={claim.report.category.imageUrl}
+                  alt={claim.report.itemName}
+                  fallbackAlt={claim.report.category.name}
+                  className="absolute inset-0"
+                  imageClassName={`object-cover ${claim.status === "PENDING" || claim.status === "REJECTED" ? "blur-sm" : ""}`}
+                  sizes="64px"
+                />
               </div>
 
               {/* Content */}

@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/utils/auth-guard";
-import { prisma } from "@/lib/prisma/client";
+import { getPublicReportList } from "@/lib/queries/public-report-list.query";
 import { PageHero } from "@/components/shared/page-hero";
 import { Package, PenLine } from "lucide-react";
 import Link from "next/link";
@@ -10,34 +10,26 @@ export const metadata = {
   description: "Daftar semua laporan barang hilang di SMK Forward Nusantara",
 };
 
-export default async function LostItemsPage() {
+export default async function LostItemsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    status?: string;
+    category?: string;
+  }>;
+}) {
   await requireAuth();
+  const params = await searchParams;
 
-  const [reports, categories] = await Promise.all([
-    prisma.report.findMany({
-      where: { type: "LOST" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        category: true,
-        images: { take: 1, orderBy: { createdAt: "asc" } },
-      },
-    }),
-    prisma.category.findMany({
-      select: { name: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
-
-  const serialized = reports.map((report) => ({
-    id: report.id,
-    type: report.type,
-    status: report.status,
-    itemName: report.itemName,
-    location: report.location,
-    date: report.date,
-    category: { name: report.category.name, imageUrl: report.category.imageUrl ?? undefined },
-    reportImageUrl: report.images[0]?.url,
-  }));
+  const result = await getPublicReportList({
+    type: "LOST",
+    page: params.page,
+    q: params.q,
+    status: params.status,
+    category: params.category,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,7 +37,7 @@ export default async function LostItemsPage() {
         variant="default"
         icon={Package}
         title="Barang Hilang"
-        subtitle={`${reports.length} laporan barang hilang`}
+        subtitle={`${result.counts.all} laporan barang hilang`}
       >
         <Link
           href="/dashboard/report/lost"
@@ -56,7 +48,13 @@ export default async function LostItemsPage() {
         </Link>
       </PageHero>
 
-      <LostItemsFilterClient reports={serialized} categories={categories} />
+      <LostItemsFilterClient
+        reports={result.items}
+        categories={result.categories}
+        counts={result.counts}
+        filters={result.filters}
+        pagination={result.pagination}
+      />
     </div>
   );
 }

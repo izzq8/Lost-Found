@@ -1,43 +1,26 @@
 import { requireAdmin } from "@/lib/utils/auth-guard";
-import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
 import { ClipboardList, UserCheck } from "lucide-react";
 import AdminClaimsClient from "./_components/admin-claims-client";
+import { getAdminClaimsList } from "@/lib/queries/admin-list.query";
 
 export const metadata = { title: "Manajemen Klaim — LostFound SMKFN" };
 
-export default async function AdminClaimsPage() {
+export default async function AdminClaimsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    status?: string;
+    category?: string;
+  }>;
+}) {
   await requireAdmin();
+  const params = await searchParams;
 
-  const claims = await prisma.claim.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      claimant: { select: { name: true, jabatan: true } },
-      report: {
-        select: {
-          itemName: true,
-          category: { select: { name: true, imageUrl: true } },
-          images: { take: 1, select: { url: true } },
-        },
-      },
-    },
-  });
-
-  const serialized = claims.map((c) => ({
-    id: c.id,
-    status: c.status as string,
-    claimantName: c.claimant.name,
-    claimantJabatan: c.claimant.jabatan as string,
-    itemName: c.report.itemName,
-    category: c.report.category.name,
-    imageUrl: c.report.images.length > 0 ? c.report.images[0].url : null,
-    categoryImageUrl: c.report.category.imageUrl,
-    createdAt: c.createdAt.toISOString(),
-    handoverPhotoUrl: c.handoverPhotoUrl || null,
-  }));
-
-  const pendingCount = claims.filter((c) => c.status === "PENDING").length;
+  const result = await getAdminClaimsList(params);
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,7 +28,7 @@ export default async function AdminClaimsPage() {
         icon={ClipboardList}
         title="Manajemen Klaim"
         subtitle="Tinjau dan proses pengajuan klaim dari pengguna"
-        badge={`${pendingCount} menunggu`}
+        badge={`${result.counts.PENDING ?? 0} menunggu`}
       >
         <Link
           href="/admin/claims/manual"
@@ -55,7 +38,13 @@ export default async function AdminClaimsPage() {
         </Link>
       </PageHero>
 
-      <AdminClaimsClient claims={serialized} pendingCount={pendingCount} />
+      <AdminClaimsClient
+        claims={result.items}
+        counts={result.counts}
+        categories={result.categories}
+        filters={result.filters}
+        pagination={result.pagination}
+      />
     </div>
   );
 }

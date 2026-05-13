@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, useCallback } from "react";
+import { useRef, useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,8 @@ import {
 import { editReport } from "@/lib/actions/report.actions";
 import { PageHero } from "@/components/shared/page-hero";
 import { PenLine, Upload, X, Loader2, ArrowLeft, Lock, ImageIcon } from "lucide-react";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 interface ExistingImage {
   id: string;
@@ -69,6 +71,7 @@ export default function EditReportFormClient({
   // Existing images management
   const [keptImages, setKeptImages] = useState<ExistingImage[]>(report.images);
   const [newPreviews, setNewPreviews] = useState<NewImagePreview[]>([]);
+  const newPreviewsRef = useRef<NewImagePreview[]>([]);
 
   // Form setup — different schema based on status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,32 +97,48 @@ export default function EditReportFormClient({
 
   const totalImageCount = keptImages.length + newPreviews.length;
 
-  const addFiles = useCallback((files: FileList | File[]) => {
+  useEffect(() => {
+    newPreviewsRef.current = newPreviews;
+  }, [newPreviews]);
+
+  useEffect(() => {
+    return () => {
+      newPreviewsRef.current.forEach((img) => revokeImagePreview(img.previewUrl));
+    };
+  }, []);
+
+  const addFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remaining = MAX_IMAGES - totalImageCount;
     const toAdd = fileArray.slice(0, remaining);
 
     const previews: NewImagePreview[] = [];
+    const errors: string[] = [];
     for (const file of toAdd) {
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        setServerError(`File "${file.name}" melebihi 5MB.`);
-        continue;
-      }
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        setServerError(`Format "${file.name}" tidak didukung.`);
+        errors.push(`Format "${file.name}" tidak didukung.`);
         continue;
       }
-      previews.push({ file, previewUrl: URL.createObjectURL(file), name: file.name });
+      try {
+        const optimizedFile = await prepareImageForUpload(file, { maxBytes: MAX_IMAGE_SIZE_BYTES });
+        previews.push({
+          file: optimizedFile,
+          previewUrl: createImagePreview(optimizedFile),
+          name: optimizedFile.name,
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+      }
     }
 
     setNewPreviews((prev) => [...prev, ...previews]);
-    setServerError(null);
+    setServerError(errors.length > 0 ? errors.join(" ") : null);
   }, [totalImageCount]);
 
   const removeKeptImage = (idx: number) => setKeptImages((prev) => prev.filter((_, i) => i !== idx));
   const removeNewImage = (idx: number) => {
     setNewPreviews((prev) => {
-      URL.revokeObjectURL(prev[idx].previewUrl);
+      revokeImagePreview(prev[idx].previewUrl);
       return prev.filter((_, i) => i !== idx);
     });
   };
@@ -342,7 +361,12 @@ export default function EditReportFormClient({
               <div className="flex gap-2 mb-3 flex-wrap">
                 {keptImages.map((img, idx) => (
                   <div key={img.id} className="relative group">
-                    <img src={img.url} alt={`Existing ${idx}`} className="w-20 h-20 object-cover rounded-xl border border-slate-200" />
+                    <OptimizedThumbnail
+                      src={img.url}
+                      alt={`Existing ${idx}`}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200"
+                      sizes="80px"
+                    />
                     <button
                       type="button"
                       onClick={() => removeKeptImage(idx)}
@@ -354,7 +378,12 @@ export default function EditReportFormClient({
                 ))}
                 {newPreviews.map((img, idx) => (
                   <div key={`new-${idx}`} className="relative group">
-                    <img src={img.previewUrl} alt={img.name} className="w-20 h-20 object-cover rounded-xl border border-orange-200" />
+                    <OptimizedThumbnail
+                      src={img.previewUrl}
+                      alt={img.name}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-orange-200"
+                      sizes="80px"
+                    />
                     <button
                       type="button"
                       onClick={() => removeNewImage(idx)}
@@ -402,7 +431,13 @@ export default function EditReportFormClient({
             <label className={labelCls}>Foto <Lock size={12} className="inline ml-1 text-slate-400" /></label>
             <div className="flex gap-2 flex-wrap">
               {report.images.map((img, idx) => (
-                <img key={img.id} src={img.url} alt={`Photo ${idx}`} className="w-20 h-20 object-cover rounded-xl border border-slate-200 opacity-60" />
+                <OptimizedThumbnail
+                  key={img.id}
+                  src={img.url}
+                  alt={`Photo ${idx}`}
+                  className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 opacity-60"
+                  sizes="80px"
+                />
               ))}
             </div>
             <p className="text-xs text-slate-400 mt-1">Foto tidak dapat diubah pada laporan yang sudah diverifikasi.</p>

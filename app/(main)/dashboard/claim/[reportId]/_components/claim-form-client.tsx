@@ -1,18 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { claimSchema, MAX_CLAIM_IMAGES } from "@/lib/validations/claim.schema";
 import { submitClaim } from "@/lib/actions/claim.actions";
 import { useRouter } from "next/navigation";
 import { UploadCloud, X, Loader2, ImagePlus } from "lucide-react";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
+
+interface ClaimImagePreview {
+  file: File;
+  previewUrl: string;
+}
 
 export default function ClaimFormClient({ reportId, itemName }: { reportId: string; itemName: string }) {
   const router = useRouter();
-  const [images, setImages] = useState<File[]>([]);
+  const [images, setImages] = useState<ClaimImagePreview[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const imagesRef = useRef<ClaimImagePreview[]>([]);
 
   const {
     register,
@@ -23,15 +31,43 @@ export default function ClaimFormClient({ reportId, itemName }: { reportId: stri
     defaultValues: { reportId, description: "" },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((image) => revokeImagePreview(image.previewUrl));
+    };
+  }, []);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...selectedFiles].slice(0, MAX_CLAIM_IMAGES));
+      const nextImages: ClaimImagePreview[] = [];
+      const errors: string[] = [];
+      for (const file of selectedFiles.slice(0, MAX_CLAIM_IMAGES - images.length)) {
+        try {
+          const optimizedFile = await prepareImageForUpload(file);
+          nextImages.push({
+            file: optimizedFile,
+            previewUrl: createImagePreview(optimizedFile),
+          });
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+        }
+      }
+      setImages((prev) => [...prev, ...nextImages].slice(0, MAX_CLAIM_IMAGES));
+      setServerError(errors.length > 0 ? errors.join(" ") : null);
+      e.target.value = "";
     }
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      revokeImagePreview(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const onSubmit = async (data: any) => {
@@ -41,7 +77,7 @@ export default function ClaimFormClient({ reportId, itemName }: { reportId: stri
     const formData = new FormData();
     formData.append("reportId", data.reportId);
     formData.append("description", data.description);
-    images.forEach((img) => formData.append("images", img));
+    images.forEach((img) => formData.append("images", img.file));
 
     const result = await submitClaim(formData);
 
@@ -87,9 +123,14 @@ export default function ClaimFormClient({ reportId, itemName }: { reportId: stri
         <p className="text-xs text-slate-500 -mt-1">Upload foto nota, garansi, atau foto Anda dengan barang tersebut (Maks {MAX_CLAIM_IMAGES} foto)</p>
         
         <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {images.map((file, i) => (
+          {images.map((image, i) => (
             <div key={i} className="relative aspect-square rounded-xl border border-slate-200 overflow-hidden group">
-              <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+              <OptimizedThumbnail
+                src={image.previewUrl}
+                alt="preview"
+                className="absolute inset-0"
+                sizes="160px"
+              />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
