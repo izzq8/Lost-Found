@@ -107,6 +107,8 @@ model Profile {
   passwordResetsProcessed PasswordResetRequest[] @relation("PasswordResetProcessor")
   foundMatches            FoundMatch[]           @relation("FoundMatches")
 
+  @@index([createdAt])
+  @@index([status])
   @@map("profiles")
 }
 
@@ -172,6 +174,7 @@ model Report {
   @@index([reporterId])
   @@index([status])
   @@index([createdAt])
+  @@index([reporterId, createdAt])
   @@index([type, status, createdAt])
   @@map("reports")
 }
@@ -218,6 +221,7 @@ model Claim {
   @@index([claimantId])
   @@index([status])
   @@index([claimantId, status])
+  @@index([claimantId, createdAt])
   @@map("claims")
 }
 
@@ -266,6 +270,8 @@ model Notification {
   user Profile @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
 
@@ -348,6 +354,7 @@ model FoundMatch {
   @@index([reportId])
   @@index([finderId])
   @@index([status])
+  @@index([finderId, createdAt])
   @@map("found_matches")
 }
 
@@ -361,5 +368,6 @@ model FoundMatchImage {
 
   foundMatch FoundMatch @relation(fields: [foundMatchId], references: [id], onDelete: Cascade)
 
+  @@index([foundMatchId])
   @@map("found_match_images")
 }

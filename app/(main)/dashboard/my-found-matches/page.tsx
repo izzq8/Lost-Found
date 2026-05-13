@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Search, MapPin, Calendar, Package, ArrowRight, Info, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
 
 export const metadata = {
   title: "Riwayat Penemuan Saya — LostFound SMKFN",
@@ -100,13 +101,6 @@ export default async function MyFoundMatchesPage() {
                 : fm.report.images.length > 0
                 ? fm.report.images[0].url
                 : null;
-            const categoryImg =
-              fm.report.category.imageUrl &&
-              (fm.report.category.imageUrl.startsWith("http://") ||
-                fm.report.category.imageUrl.startsWith("https://"))
-                ? fm.report.category.imageUrl
-                : null;
-
             return (
               <Link
                 key={fm.id}
@@ -116,9 +110,8 @@ export default async function MyFoundMatchesPage() {
                 }`}
                 style={{
                   background: isApproved
-                    ? "rgba(255,247,237,0.85)"
-                    : "rgba(255,255,255,0.5)",
-                  backdropFilter: "blur(12px)",
+                    ? "rgba(255,247,237,0.9)"
+                    : "rgba(255,255,255,0.82)",
                   border: isApproved
                     ? "1px solid rgba(251,146,60,0.4)"
                     : "1px solid rgba(255,255,255,0.7)",
@@ -131,7 +124,7 @@ export default async function MyFoundMatchesPage() {
                 }}
               >
                 {/* Thumbnail */}
-                <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center relative">
+                <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 relative">
                   <div
                     className={`absolute top-0 left-0 w-full h-0.5 ${
                       isApproved
@@ -141,23 +134,16 @@ export default async function MyFoundMatchesPage() {
                         : isRejected
                         ? "bg-red-500"
                         : "bg-amber-400"
-                    }`}
+                      }`}
                   />
-                  {thumbnailUrl ? (
-                    <img
-                      src={thumbnailUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : categoryImg ? (
-                    <img
-                      src={categoryImg}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Package size={24} className="text-slate-300" />
-                  )}
+                  <OptimizedThumbnail
+                    src={thumbnailUrl}
+                    fallbackSrc={fm.report.category.imageUrl}
+                    alt={fm.report.itemName}
+                    fallbackAlt={fm.report.category.name}
+                    className="absolute inset-0"
+                    sizes="64px"
+                  />
                 </div>
 
                 {/* Content */}

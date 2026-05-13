@@ -1,32 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 let channelCounter = 0;
 
+type RealtimeEvent = "*" | "INSERT" | "UPDATE" | "DELETE";
+type RealtimeSubscription =
+  | string
+  | {
+      table: string;
+      event?: RealtimeEvent;
+      filter?: string;
+    };
+
 interface RealtimeRefreshOptions {
-  /** Tables to subscribe to (e.g., ["reports", "claims"]) */
-  tables: string[];
-  /** Callback to run when a change is detected */
+  tables: RealtimeSubscription[];
   onEvent: () => void;
-  /** Debounce interval in ms (default: 1000) — prevents rapid-fire refreshes */
   debounceMs?: number;
-  /** Optional filter for notifications table: only trigger for specific userId */
   notificationUserId?: string;
 }
 
-/**
- * Subscribe to Supabase Realtime PostgreSQL changes on specified tables.
- * When a change is detected, calls `onEvent` (debounced).
- *
- * Usage:
- *   useRealtimeRefresh({
- *     tables: ["reports", "claims", "notifications"],
- *     onEvent: () => router.refresh(),
- *     notificationUserId: currentUser.id,
- *   });
- */
 export function useRealtimeRefresh({
   tables,
   onEvent,
@@ -36,6 +30,18 @@ export function useRealtimeRefresh({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
+
+  const subscriptionKey = useMemo(
+    () =>
+      tables
+        .map((subscription) =>
+          typeof subscription === "string"
+            ? subscription
+            : `${subscription.table}:${subscription.event ?? "*"}:${subscription.filter ?? ""}`
+        )
+        .join("|"),
+    [tables]
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,29 +56,26 @@ export function useRealtimeRefresh({
 
     let channel = supabase.channel(channelName);
 
-    for (const table of tables) {
-      if (table === "notifications" && notificationUserId) {
-        channel = channel.on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${notificationUserId}`,
-          },
-          debouncedCallback
-        );
-      } else {
-        channel = channel.on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table,
-          },
-          debouncedCallback
-        );
-      }
+    for (const subscription of tables) {
+      const table = typeof subscription === "string" ? subscription : subscription.table;
+      const event = typeof subscription === "string" ? "*" : subscription.event ?? "*";
+      const filter =
+        typeof subscription === "string"
+          ? table === "notifications" && notificationUserId
+            ? `user_id=eq.${notificationUserId}`
+            : undefined
+          : subscription.filter;
+
+      channel = channel.on(
+        "postgres_changes",
+        {
+          event,
+          schema: "public",
+          table,
+          ...(filter ? { filter } : {}),
+        },
+        debouncedCallback
+      );
     }
 
     channel.subscribe();
@@ -82,5 +85,5 @@ export function useRealtimeRefresh({
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tables.join(","), debounceMs, notificationUserId]);
+  }, [subscriptionKey, debounceMs, notificationUserId]);
 }

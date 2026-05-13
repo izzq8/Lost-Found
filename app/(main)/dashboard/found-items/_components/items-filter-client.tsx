@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Package, PenLine } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, Search, Package, PenLine } from "lucide-react";
 import Link from "next/link";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
 import { ItemCard } from "@/components/shared/item-card";
-
-const ACTIVE_STATUSES = ["PENDING", "VERIFIED", "AWAITING_PICKUP"];
-const DONE_STATUSES = ["CLAIMED", "EXPIRED", "REJECTED", "RESOLVED"];
+import type { PaginationMeta } from "@/lib/types/pagination";
 
 type TabKey = "all" | "active" | "done";
 
@@ -17,7 +16,7 @@ interface ReportData {
   status: string;
   itemName: string;
   location: string;
-  date: Date;
+  date: string;
   category: { name: string; imageUrl?: string };
   reportImageUrl?: string;
 }
@@ -25,48 +24,77 @@ interface ReportData {
 interface Props {
   reports: ReportData[];
   categories: { name: string }[];
+  counts: { all: number; active: number; done: number };
+  filters: { q: string; status: TabKey; categories: string[] };
+  pagination: PaginationMeta;
 }
 
-export function FoundItemsFilterClient({ reports, categories }: Props) {
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<TabKey>("all");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+export function FoundItemsFilterClient({
+  reports,
+  categories,
+  counts,
+  filters,
+  pagination,
+}: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState(filters.q);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(filters.categories);
 
-  const filtered = useMemo(() => {
-    let result = reports;
+  useEffect(() => {
+    setSearch(filters.q);
+    setSelectedCategories(filters.categories);
+  }, [filters.q, filters.categories]);
 
-    if (tab === "active") result = result.filter((r) => ACTIVE_STATUSES.includes(r.status));
-    if (tab === "done") result = result.filter((r) => DONE_STATUSES.includes(r.status));
-
-    if (selectedCategories.length > 0) {
-      result = result.filter((r) => selectedCategories.includes(r.category.name));
+  const updateParams = (
+    updates: Record<string, string | undefined>,
+    { resetPage = true }: { resetPage?: boolean } = {}
+  ) => {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
     }
+    if (resetPage) next.delete("page");
+    const query = next.toString();
+    startTransition(() => {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    });
+  };
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (r) => r.itemName.toLowerCase().includes(q) || r.location.toLowerCase().includes(q)
-      );
-    }
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updateParams({ q: search.trim() || undefined });
+  };
 
-    return result;
-  }, [reports, tab, selectedCategories, search]);
+  const handleTabChange = (tab: TabKey) => {
+    updateParams({ status: tab === "all" ? undefined : tab });
+  };
 
-  const activeCount = reports.filter((r) => ACTIVE_STATUSES.includes(r.status)).length;
-  const doneCount = reports.filter((r) => DONE_STATUSES.includes(r.status)).length;
+  const handleCategoryChange = (values: string[]) => {
+    setSelectedCategories(values);
+    updateParams({ category: values.length > 0 ? values.join(",") : undefined });
+  };
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: "all", label: "Semua", count: reports.length },
-    { key: "active", label: "Aktif", count: activeCount },
-    { key: "done", label: "Selesai", count: doneCount },
+    { key: "all", label: "Semua", count: counts.all },
+    { key: "active", label: "Aktif", count: counts.active },
+    { key: "done", label: "Selesai", count: counts.done },
   ];
 
-  const categoryOptions = categories.map((c) => ({ value: c.name, label: c.name }));
+  const categoryOptions = useMemo(
+    () => categories.map((c) => ({ value: c.name, label: c.name })),
+    [categories]
+  );
+  const hasFilters =
+    Boolean(filters.q) || filters.categories.length > 0 || filters.status !== "all";
 
   return (
     <>
       {/* Search Bar */}
-      <div className="relative">
+      <form className="relative" onSubmit={handleSearch}>
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={search}
@@ -74,7 +102,7 @@ export function FoundItemsFilterClient({ reports, categories }: Props) {
           placeholder="Cari barang ditemukan..."
           className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
         />
-      </div>
+      </form>
 
       {/* Tabs + Filter Row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -83,15 +111,15 @@ export function FoundItemsFilterClient({ reports, categories }: Props) {
             <button
               key={t.key}
               type="button"
-              onClick={() => setTab(t.key)}
+              onClick={() => handleTabChange(t.key)}
               className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
-                tab === t.key
+                filters.status === t.key
                   ? "bg-orange-500 text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
               {t.label}
-              <span className={`ml-1 text-xs ${tab === t.key ? "text-orange-100" : "text-slate-400"}`}>
+              <span className={`ml-1 text-xs ${filters.status === t.key ? "text-orange-100" : "text-slate-400"}`}>
                 {t.count}
               </span>
             </button>
@@ -102,13 +130,13 @@ export function FoundItemsFilterClient({ reports, categories }: Props) {
           label="Kategori"
           options={categoryOptions}
           selected={selectedCategories}
-          onChange={setSelectedCategories}
+          onChange={handleCategoryChange}
           searchPlaceholder="Cari kategori..."
         />
       </div>
 
       {/* Results */}
-      {filtered.length === 0 ? (
+      {reports.length === 0 ? (
         <div
           className="rounded-2xl p-12 text-center flex flex-col items-center gap-3"
           style={{
@@ -121,11 +149,11 @@ export function FoundItemsFilterClient({ reports, categories }: Props) {
             <Package size={28} className="text-slate-300" />
           </div>
           <p className="text-slate-600 font-medium">
-            {search || selectedCategories.length > 0 || tab !== "all"
+            {hasFilters
               ? "Tidak ada barang yang cocok dengan filter."
               : "Belum ada laporan barang ditemukan"}
           </p>
-          {!search && selectedCategories.length === 0 && tab === "all" && (
+          {!hasFilters && (
             <Link
               href="/dashboard/report/found"
               className="text-orange-600 text-sm font-medium hover:underline flex items-center gap-1"
@@ -135,11 +163,39 @@ export function FoundItemsFilterClient({ reports, categories }: Props) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((report) => (
-            <ItemCard key={report.id} report={report} />
-          ))}
-        </div>
+        <>
+          <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${isPending ? "opacity-60" : ""}`}>
+            {reports.map((report) => (
+              <ItemCard key={report.id} report={report} />
+            ))}
+          </div>
+
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => updateParams({ page: String(pagination.page - 1) }, { resetPage: false })}
+                disabled={!pagination.hasPreviousPage}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                aria-label="Halaman sebelumnya"
+              >
+                <ChevronLeft size={16} className="text-slate-500" />
+              </button>
+              <span className="text-sm text-slate-600 font-medium">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => updateParams({ page: String(pagination.page + 1) }, { resetPage: false })}
+                disabled={!pagination.hasNextPage}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                aria-label="Halaman berikutnya"
+              >
+                <ChevronRight size={16} className="text-slate-500" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </>
   );

@@ -1,15 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createGuestReport } from "@/lib/actions/admin-report.actions";
 import {
   User, Phone, Package, MapPin, Calendar, Clock, FileText,
   ImagePlus, X, Loader2, Tag,
 } from "lucide-react";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 interface CategoryItem {
   id: string;
   name: string;
+}
+
+interface ImagePreview {
+  file: File;
+  previewUrl: string;
 }
 
 export default function GuestReportForm({ categories }: { categories: CategoryItem[] }) {
@@ -17,17 +24,44 @@ export default function GuestReportForm({ categories }: { categories: CategoryIt
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<ImagePreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageFilesRef = useRef<ImagePreview[]>([]);
 
-  const handleImageAdd = (files: FileList | null) => {
+  useEffect(() => {
+    imageFilesRef.current = imageFiles;
+  }, [imageFiles]);
+
+  useEffect(() => {
+    return () => {
+      imageFilesRef.current.forEach((image) => revokeImagePreview(image.previewUrl));
+    };
+  }, []);
+
+  const handleImageAdd = async (files: FileList | null) => {
     if (!files) return;
-    const newFiles = Array.from(files).slice(0, 3 - imageFiles.length);
+    const newFiles: ImagePreview[] = [];
+    const errors: string[] = [];
+    for (const file of Array.from(files).slice(0, 3 - imageFiles.length)) {
+      try {
+        const optimizedFile = await prepareImageForUpload(file);
+        newFiles.push({
+          file: optimizedFile,
+          previewUrl: createImagePreview(optimizedFile),
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+      }
+    }
     setImageFiles((prev) => [...prev, ...newFiles].slice(0, 3));
+    setError(errors.length > 0 ? errors.join(" ") : null);
   };
 
   const removeImage = (index: number) => {
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => {
+      revokeImagePreview(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +76,7 @@ export default function GuestReportForm({ categories }: { categories: CategoryIt
 
     // Remove old images, add current
     formData.delete("images");
-    imageFiles.forEach((f) => formData.append("images", f));
+    imageFiles.forEach((image) => formData.append("images", image.file));
 
     const result = await createGuestReport(formData);
     if (!result.success) {
@@ -221,12 +255,13 @@ export default function GuestReportForm({ categories }: { categories: CategoryIt
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {imageFiles.map((file, i) => (
+          {imageFiles.map((image, i) => (
             <div key={i} className="w-20 h-20 rounded-xl border border-slate-200 relative overflow-hidden group">
-              <img
-                src={URL.createObjectURL(file)}
+              <OptimizedThumbnail
+                src={image.previewUrl}
                 alt={`Preview ${i + 1}`}
-                className="w-full h-full object-cover"
+                className="absolute inset-0"
+                sizes="80px"
               />
               <button
                 type="button"

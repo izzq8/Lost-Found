@@ -68,10 +68,9 @@ export default function UserNavClient({ currentUser, unreadCount = 0, totalActio
 
   // ── REALTIME SUBSCRIPTIONS ──────────────────────────────────────────────
   useRealtimeRefresh({
-    tables: ["notifications", "reports", "claims"],
+    tables: [{ table: "notifications", event: "INSERT", filter: `user_id=eq.${currentUser.id}` }],
     onEvent: () => router.refresh(),
     debounceMs: 2000,
-    notificationUserId: currentUser.id,
   });
 
   const isActive = (href: string) => {

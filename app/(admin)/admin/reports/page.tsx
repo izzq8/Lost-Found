@@ -1,54 +1,27 @@
 import { requireAdmin } from "@/lib/utils/auth-guard";
-import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
 import { FileText, UserPlus } from "lucide-react";
 import AdminReportsClient from "./_components/admin-reports-client";
+import { getAdminReportsList } from "@/lib/queries/admin-list.query";
 
 export const metadata = { title: "Manajemen Laporan — LostFound SMKFN" };
 
-export default async function AdminReportsPage() {
+export default async function AdminReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    status?: string;
+    category?: string;
+    type?: string;
+  }>;
+}) {
   await requireAdmin();
+  const params = await searchParams;
 
-  const reports = await prisma.report.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      reporter: { select: { name: true, jabatan: true } },
-      category: { select: { name: true, imageUrl: true } },
-      images: { take: 1, select: { url: true } },
-      foundMatches: {
-        where: { status: { in: ["APPROVED", "ITEM_RECEIVED", "COMPLETED"] } },
-        select: { finder: { select: { name: true } }, handoverPhotoUrl: true, pickupPhotoUrl: true },
-        take: 1,
-      },
-      claims: {
-        where: { status: { in: ["APPROVED", "COMPLETED"] } },
-        select: { claimant: { select: { name: true } }, handoverPhotoUrl: true },
-        take: 1,
-      },
-    },
-  });
-
-  const serialized = reports.map((r) => ({
-    id: r.id,
-    type: r.type as string,
-    status: r.status as string,
-    itemName: r.itemName,
-    category: r.category.name,
-    categoryImageUrl: r.category.imageUrl,
-    imageUrl: r.images.length > 0 ? r.images[0].url : null,
-    location: r.location,
-    date: r.date.toISOString(),
-    createdAt: r.createdAt.toISOString(),
-    reporterName: r.reporter.name,
-    reporterJabatan: r.reporter.jabatan as string,
-    finderName: r.foundMatches[0]?.finder?.name || null,
-    claimantName: r.claims[0]?.claimant?.name || null,
-    handoverPhotoUrl: r.foundMatches[0]?.handoverPhotoUrl || r.claims[0]?.handoverPhotoUrl || null,
-    pickupPhotoUrl: r.foundMatches[0]?.pickupPhotoUrl || null,
-  }));
-
-  const pendingCount = reports.filter((r) => r.status === "PENDING").length;
+  const result = await getAdminReportsList(params);
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,7 +29,7 @@ export default async function AdminReportsPage() {
         icon={FileText}
         title="Manajemen Laporan"
         subtitle="Verifikasi, kelola, dan tinjau semua laporan yang masuk"
-        badge={`${reports.length} total`}
+        badge={`${result.counts.Semua ?? 0} total`}
       />
 
       <div className="flex items-center gap-3">
@@ -74,7 +47,13 @@ export default async function AdminReportsPage() {
         </Link>
       </div>
 
-      <AdminReportsClient reports={serialized} pendingCount={pendingCount} />
+      <AdminReportsClient
+        reports={result.items}
+        counts={result.counts}
+        categories={result.categories}
+        filters={result.filters}
+        pagination={result.pagination}
+      />
     </div>
   );
 }

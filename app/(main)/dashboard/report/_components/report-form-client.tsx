@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, useCallback } from "react";
+import { useRef, useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,8 @@ import { createReport } from "@/lib/actions/report.actions";
 import { PageHero } from "@/components/shared/page-hero";
 import { PenLine, Upload, X, Info, ImageIcon, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 interface Category {
   id: string;
@@ -39,6 +41,7 @@ export default function ReportFormClient({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const imagePreviewsRef = useRef<ImagePreview[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const isLost = type === "LOST";
@@ -64,36 +67,48 @@ export default function ReportFormClient({
     ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
     : undefined;
 
+  useEffect(() => {
+    imagePreviewsRef.current = imagePreviews;
+  }, [imagePreviews]);
+
+  useEffect(() => {
+    return () => {
+      imagePreviewsRef.current.forEach((img) => revokeImagePreview(img.previewUrl));
+    };
+  }, []);
+
   // Tambahkan file ke preview list
-  const addFiles = useCallback((files: FileList | File[]) => {
+  const addFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remaining = MAX_IMAGES - imagePreviews.length;
     const toAdd = fileArray.slice(0, remaining);
 
     const newPreviews: ImagePreview[] = [];
+    const errors: string[] = [];
     for (const file of toAdd) {
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        setServerError(`File "${file.name}" melebihi 5MB.`);
-        continue;
-      }
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        setServerError(`Format "${file.name}" tidak didukung.`);
+        errors.push(`Format "${file.name}" tidak didukung.`);
         continue;
       }
-      newPreviews.push({
-        file,
-        previewUrl: URL.createObjectURL(file),
-        name: file.name,
-      });
+      try {
+        const optimizedFile = await prepareImageForUpload(file, { maxBytes: MAX_IMAGE_SIZE_BYTES });
+        newPreviews.push({
+          file: optimizedFile,
+          previewUrl: createImagePreview(optimizedFile),
+          name: optimizedFile.name,
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+      }
     }
 
     setImagePreviews((prev) => [...prev, ...newPreviews]);
-    setServerError(null);
+    setServerError(errors.length > 0 ? errors.join(" ") : null);
   }, [imagePreviews.length]);
 
   const removeImage = (idx: number) => {
     setImagePreviews((prev) => {
-      URL.revokeObjectURL(prev[idx].previewUrl);
+      revokeImagePreview(prev[idx].previewUrl);
       return prev.filter((_, i) => i !== idx);
     });
   };
@@ -344,11 +359,11 @@ export default function ReportFormClient({
             <div className="flex gap-2 mb-3 flex-wrap">
               {imagePreviews.map((img, idx) => (
                 <div key={idx} className="relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <OptimizedThumbnail
                     src={img.previewUrl}
                     alt={img.name}
-                    className="w-20 h-20 object-cover rounded-xl border border-slate-200"
+                    className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200"
+                    sizes="80px"
                   />
                   <button
                     type="button"

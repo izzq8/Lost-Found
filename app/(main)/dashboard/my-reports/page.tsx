@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { FileText, MapPin, Calendar, Package, PenLine, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
 
 export const metadata = {
   title: "Riwayat Laporan Saya — LostFound SMKFN",
@@ -97,23 +98,23 @@ export default async function MyReportsPage({
                   isFoundPending ? 'ring-2 ring-green-400/70 shadow-green-100' : ''
                 }`}
                 style={{
-                  background: isFoundPending ? "rgba(240,253,244,0.7)" : "rgba(255,255,255,0.5)",
-                  backdropFilter: "blur(12px)",
+                  background: isFoundPending ? "rgba(240,253,244,0.88)" : "rgba(255,255,255,0.82)",
                   border: isFoundPending ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(255,255,255,0.7)",
                   boxShadow: isFoundPending ? "0 2px 12px rgba(34,197,94,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
                   animation: isFoundPending ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : undefined,
                 }}
               >
                 {/* Thumbnail */}
-                <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center relative">
+                <div className="mt-0.5 shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 relative">
                   <div className={`absolute top-0 left-0 w-full h-0.5 ${report.type === "LOST" ? "bg-red-500" : "bg-green-500"}`} />
-                  {report.images.length > 0 ? (
-                    <img src={report.images[0].url} alt="" className="w-full h-full object-cover" />
-                  ) : report.category.imageUrl && report.category.imageUrl.startsWith("http") ? (
-                    <img src={report.category.imageUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Package size={24} className="text-slate-300" />
-                  )}
+                  <OptimizedThumbnail
+                    src={report.images[0]?.url}
+                    fallbackSrc={report.category.imageUrl}
+                    alt={report.itemName}
+                    fallbackAlt={report.category.name}
+                    className="absolute inset-0"
+                    sizes="64px"
+                  />
                 </div>
 
                 {/* Content */}

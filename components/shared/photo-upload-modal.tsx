@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, X, Loader2, Upload } from "lucide-react";
 import { uploadDocumentationPhoto } from "@/lib/actions/upload-photo.actions";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 interface PhotoUploadModalProps {
   open: boolean;
@@ -31,25 +33,34 @@ export function PhotoUploadModal({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    return () => {
+      revokeImagePreview(preview);
+    };
+  }, [preview]);
+
   if (!open) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
-
-    if (selected.size > 5 * 1024 * 1024) {
-      setError("Ukuran file maksimal 5MB.");
-      return;
-    }
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(selected.type)) {
       setError("Format file harus JPEG, PNG, atau WebP.");
       return;
     }
 
-    setError(null);
-    setFile(selected);
-    setPreview(URL.createObjectURL(selected));
+    try {
+      const optimizedFile = await prepareImageForUpload(selected);
+      setError(null);
+      setFile(optimizedFile);
+      setPreview((current) => {
+        revokeImagePreview(current);
+        return createImagePreview(optimizedFile);
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Gagal memproses gambar.");
+    }
   };
 
   const handleConfirm = async () => {
@@ -85,7 +96,10 @@ export function PhotoUploadModal({
 
   const handleCancel = () => {
     setFile(null);
-    setPreview(null);
+    setPreview((current) => {
+      revokeImagePreview(current);
+      return null;
+    });
     setError(null);
     onCancel();
   };
@@ -99,14 +113,21 @@ export function PhotoUploadModal({
         {/* Photo Preview / Upload Area */}
         {preview ? (
           <div className="relative mb-4">
-            <img
+            <OptimizedThumbnail
               src={preview}
               alt="Preview"
-              className="w-full h-56 object-cover rounded-xl border border-slate-200"
+              className="relative w-full h-56 rounded-xl overflow-hidden border border-slate-200"
+              sizes="448px"
             />
             <button
               type="button"
-              onClick={() => { setFile(null); setPreview(null); }}
+              onClick={() => {
+                setFile(null);
+                setPreview((current) => {
+                  revokeImagePreview(current);
+                  return null;
+                });
+              }}
               className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 cursor-pointer transition-colors"
             >
               <X size={14} />

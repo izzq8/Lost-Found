@@ -3,10 +3,11 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, Package, Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
 
 interface FoundMatchItem {
   id: string;
@@ -136,21 +137,19 @@ export default function AdminFoundMatchesClient({ matches, pendingCount }: { mat
               ) : (
                 filtered.map((m, i) => {
                   const thumbnailUrl = m.matchImageUrl || m.reportImageUrl || null;
-                  const categoryImg = m.categoryImageUrl && (m.categoryImageUrl.startsWith("http://") || m.categoryImageUrl.startsWith("https://")) ? m.categoryImageUrl : null;
 
                   return (
                     <tr key={m.id} className="border-t border-slate-100 hover:bg-orange-50/30 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-400">{i + 1}</td>
                       <td className="px-4 py-3">
-                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
-                          {thumbnailUrl ? (
-                            <img src={thumbnailUrl} alt={m.itemName} className="w-full h-full object-cover" />
-                          ) : categoryImg ? (
-                            <img src={categoryImg} alt={m.category} className="w-full h-full object-cover" />
-                          ) : (
-                            <Package size={18} className="text-slate-300" />
-                          )}
-                        </div>
+                        <OptimizedThumbnail
+                          src={thumbnailUrl}
+                          fallbackSrc={m.categoryImageUrl}
+                          alt={m.itemName}
+                          fallbackAlt={m.category}
+                          className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0"
+                          sizes="40px"
+                        />
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                         {new Date(m.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
@@ -187,18 +186,16 @@ export default function AdminFoundMatchesClient({ matches, pendingCount }: { mat
           ) : (
             filtered.map((m) => {
               const thumbnailUrl = m.matchImageUrl || m.reportImageUrl || null;
-              const categoryImg = m.categoryImageUrl && (m.categoryImageUrl.startsWith("http://") || m.categoryImageUrl.startsWith("https://")) ? m.categoryImageUrl : null;
               return (
                 <Link key={m.id} href={`/admin/found-matches/${m.id}`} className="flex items-center gap-3 p-4 hover:bg-orange-50/30 transition-colors">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0">
-                    {thumbnailUrl ? (
-                      <img src={thumbnailUrl} alt={m.itemName} className="w-full h-full object-cover" />
-                    ) : categoryImg ? (
-                      <img src={categoryImg} alt={m.category} className="w-full h-full object-cover" />
-                    ) : (
-                      <Package size={20} className="text-slate-300" />
-                    )}
-                  </div>
+                  <OptimizedThumbnail
+                    src={thumbnailUrl}
+                    fallbackSrc={m.categoryImageUrl}
+                    alt={m.itemName}
+                    fallbackAlt={m.category}
+                    className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0"
+                    sizes="48px"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{m.itemName}</p>
                     <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">

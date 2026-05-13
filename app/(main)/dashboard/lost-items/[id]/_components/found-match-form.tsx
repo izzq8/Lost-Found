@@ -1,30 +1,66 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { submitFoundMatch } from "@/lib/actions/found-match.actions";
 import { Search, Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { OptimizedThumbnail } from "@/components/shared/optimized-thumbnail";
+import { createImagePreview, prepareImageForUpload, revokeImagePreview } from "@/lib/utils/image-client";
 
 type FoundMatchFormProps = {
   reportId: string;
   reportItemName: string;
 };
 
+interface FoundMatchImagePreview {
+  file: File;
+  previewUrl: string;
+}
+
 export function FoundMatchForm({ reportId, reportItemName }: FoundMatchFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; error?: string; fieldErrors?: Record<string, string[]> } | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<FoundMatchImagePreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedFilesRef = useRef<FoundMatchImagePreview[]>([]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    selectedFilesRef.current = selectedFiles;
+  }, [selectedFiles]);
+
+  useEffect(() => {
+    return () => {
+      selectedFilesRef.current.forEach((file) => revokeImagePreview(file.previewUrl));
+    };
+  }, []);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const total = [...selectedFiles, ...files].slice(0, 3);
-    setSelectedFiles(total);
+    const nextFiles: FoundMatchImagePreview[] = [];
+    const errors: string[] = [];
+    for (const file of files.slice(0, 3 - selectedFiles.length)) {
+      try {
+        const optimizedFile = await prepareImageForUpload(file);
+        nextFiles.push({
+          file: optimizedFile,
+          previewUrl: createImagePreview(optimizedFile),
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : `Gagal memproses "${file.name}".`);
+      }
+    }
+    setSelectedFiles((prev) => [...prev, ...nextFiles].slice(0, 3));
+    if (errors.length > 0) {
+      setResult({ success: false, error: errors.join(" ") });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => {
+      revokeImagePreview(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,13 +73,14 @@ export function FoundMatchForm({ reportId, reportItemName }: FoundMatchFormProps
 
     // Remove existing files and add our managed ones
     formData.delete("images");
-    selectedFiles.forEach((file) => formData.append("images", file));
+    selectedFiles.forEach((file) => formData.append("images", file.file));
 
     const res = await submitFoundMatch(formData);
     setResult(res);
     setIsSubmitting(false);
 
     if (res.success) {
+      selectedFiles.forEach((file) => revokeImagePreview(file.previewUrl));
       setSelectedFiles([]);
       form.reset();
     }
@@ -136,10 +173,11 @@ export function FoundMatchForm({ reportId, reportItemName }: FoundMatchFormProps
                   {selectedFiles.map((file, i) => (
                     <div key={i} className="relative group">
                       <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
+                        <OptimizedThumbnail
+                          src={file.previewUrl}
+                          alt={reportItemName}
+                          className="relative w-full h-full"
+                          sizes="64px"
                         />
                       </div>
                       <button
