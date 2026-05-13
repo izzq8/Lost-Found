@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Search, MapPin, Phone, Mail, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Phone, Mail } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -43,10 +43,9 @@ export function Footer() {
                 <li key={idx}>
                   <Link
                     href={link.href}
-                    className="group flex items-center gap-2 text-slate-600 hover:text-orange-500 transition-colors w-fit"
+                    className="text-slate-600 hover:text-orange-500 transition-colors w-fit"
                     style={{ fontSize: '14px', fontWeight: 500 }}
                   >
-                    <ChevronRight size={14} className="text-slate-400 group-hover:text-orange-500 transition-colors" />
                     {link.label}
                   </Link>
                 </li>

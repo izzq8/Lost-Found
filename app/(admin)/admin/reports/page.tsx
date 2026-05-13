@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
-import { FileText, ArrowLeft, UserPlus } from "lucide-react";
+import { FileText, UserPlus } from "lucide-react";
 import AdminReportsClient from "./_components/admin-reports-client";
 
 export const metadata = { title: "Manajemen Laporan — LostFound SMKFN" };
@@ -52,10 +52,6 @@ export default async function AdminReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin" className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium">
-        <ArrowLeft size={16} /> Kembali ke Dashboard
-      </Link>
-
       <PageHero
         icon={FileText}
         title="Manajemen Laporan"

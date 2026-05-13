@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, Trash2, X, Loader2, Plus, Upload, ImageIcon } from "lucide-react";
+import { Edit, Trash2, X, Loader2, Plus, Upload, ImageIcon, Tag } from "lucide-react";
 import { createCategory, updateCategory, deleteCategory } from "@/lib/actions/admin.actions";
+import { PageHero } from "@/components/shared/page-hero";
 
 interface CategoryItem {
   id: string;
@@ -152,16 +153,20 @@ export default function CategoriesClient({ categories }: { categories: CategoryI
     !loading;
 
   return (
-    <>
-      {/* Add button */}
-      <div className="flex justify-end">
+    <div className="flex flex-col gap-6">
+      <PageHero
+        icon={Tag}
+        title="Manajemen Kategori"
+        subtitle="Atur kategori barang untuk klasifikasi laporan"
+        badge={`${categories.length} kategori`}
+      >
         <button
           onClick={openCreate}
-          className="h-10 flex items-center gap-2 px-5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 shadow-sm transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-colors shadow-lg cursor-pointer"
         >
-          <Plus size={16} /> Tambah Kategori
+          <Plus size={15} /> Tambah Kategori
         </button>
-      </div>
+      </PageHero>
 
       {/* Grid Cards for mobile, Table for desktop */}
       {/* Mobile Cards */}
@@ -455,6 +460,6 @@ export default function CategoriesClient({ categories }: { categories: CategoryI
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

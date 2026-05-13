@@ -25,8 +25,8 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
 
   // User search
   const [userSearch, setUserSearch] = useState("");
-  const [userResults, setUserResults] = useState<{ id: string; name: string; jabatan: string }[]>([]);
-  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [userResults, setUserResults] = useState<{ id: string; name: string; email: string; jabatan: string }[]>([]);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; email: string } | null>(null);
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -165,6 +165,7 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
                 {selectedUser.name.substring(0, 2).toUpperCase()}
               </div>
               <p className="text-sm font-semibold text-slate-800">{selectedUser.name}</p>
+              <p className="text-[11px] text-slate-500">{selectedUser.email}</p>
             </div>
             <button
               type="button"
@@ -192,7 +193,7 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
                   <button
                     key={u.id}
                     type="button"
-                    onClick={() => { setSelectedUser({ id: u.id, name: u.name }); setUserResults([]); setUserSearch(""); }}
+                    onClick={() => { setSelectedUser({ id: u.id, name: u.name, email: u.email }); setUserResults([]); setUserSearch(""); }}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-orange-50 transition-colors text-left cursor-pointer"
                   >
                     <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px]">
@@ -200,7 +201,7 @@ export default function ProxyReportForm({ categories }: { categories: CategoryIt
                     </div>
                     <div>
                       <p className="text-sm font-medium text-slate-700">{u.name}</p>
-                      <p className="text-[10px] text-slate-400 capitalize">{u.jabatan.toLowerCase().replace(/_/g, " ")}</p>
+                      <p className="text-[10px] text-slate-400">{u.email} · {u.jabatan.toLowerCase().replace(/_/g, " ")}</p>
                     </div>
                   </button>
                 ))}

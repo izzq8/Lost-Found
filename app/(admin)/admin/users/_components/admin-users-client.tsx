@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ToggleLeft, ToggleRight, Loader2, Trash2 } from "lucide-react";
+import { Search, ToggleLeft, ToggleRight, Loader2, Trash2, Filter } from "lucide-react";
 import { deactivateUser, reactivateUser } from "@/lib/actions/user.actions";
 import { adminDeleteUser } from "@/lib/actions/admin.actions";
 
@@ -29,6 +29,8 @@ export default function AdminUsersClient({
   const router = useRouter();
   const [tab, setTab] = useState<"ACTIVE" | "DEACTIVATED">("ACTIVE");
   const [search, setSearch] = useState("");
+  const [jabatanFilter, setJabatanFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
@@ -40,7 +42,9 @@ export default function AdminUsersClient({
         !search ||
         u.name.toLowerCase().includes(search.toLowerCase()) ||
         u.email.toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .filter((u) => jabatanFilter === "all" || u.jabatan === jabatanFilter)
+    .filter((u) => roleFilter === "all" || u.role === roleFilter);
 
   const handleToggle = async (userId: string, currentStatus: string) => {
     setLoadingId(userId);
@@ -87,16 +91,45 @@ export default function AdminUsersClient({
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Cari nama atau email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
-        />
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Cari nama atau email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
+          />
+        </div>
+        <div className="relative">
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <select
+            value={jabatanFilter}
+            onChange={(e) => setJabatanFilter(e.target.value)}
+            className="h-10 pl-8 pr-8 rounded-xl border border-slate-200 bg-white text-sm outline-none appearance-none cursor-pointer focus:border-orange-500"
+          >
+            <option value="all">Semua Jabatan</option>
+            <option value="SISWA">Siswa</option>
+            <option value="GURU">Guru</option>
+            <option value="SECURITY">Security</option>
+            <option value="FRONT_OFFICE">Front Office</option>
+            <option value="GURU_PIKET">Guru Piket</option>
+          </select>
+        </div>
+        <div className="relative">
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="h-10 pl-8 pr-8 rounded-xl border border-slate-200 bg-white text-sm outline-none appearance-none cursor-pointer focus:border-orange-500"
+          >
+            <option value="all">Semua Role</option>
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}

@@ -39,8 +39,7 @@ const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: nu
     label: "Pengguna",
     items: [
       { icon: Users, label: "Manajemen User", href: "/admin/users", badge: 0 },
-      { icon: UserPlus, label: "Buat Akun Admin", href: "/admin/users/create-admin", badge: 0 },
-      { icon: KeyRound, label: "Reset Password", href: "/admin/password-requests", badge: 0 },
+      { icon: KeyRound, label: "Request Reset Password", href: "/admin/password-requests", badge: 0 },
     ],
   },
   {
@@ -228,14 +227,16 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100">
+          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 shrink-0">
               <span className="text-[15px] font-bold text-slate-800">Menu Admin</span>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
-            <SidebarContent isMobile />
+            <div className="flex-1 overflow-y-auto">
+              <SidebarContent isMobile />
+            </div>
           </aside>
         </div>
       )}
@@ -335,7 +336,7 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
               </button>
               {showUserMenu && (
                 <div className="absolute top-full mt-1.5 right-0 w-[200px] bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xl py-1">
-                  <Link href="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-slate-600 hover:bg-slate-50 text-[13px] font-medium">
+                  <Link href="/admin/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-slate-600 hover:bg-slate-50 text-[13px] font-medium">
                     <User size={16} /> Profil
                   </Link>
                   <div className="border-t border-slate-100 my-1" />

@@ -3,11 +3,23 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "#FDBA74",
-  VERIFIED: "#FB923C",
-  CLAIMED: "#EA580C",
-  REJECTED: "#9A3412",
-  EXPIRED: "#FED7AA",
+  PENDING: "#F59E0B",
+  VERIFIED: "#3B82F6",
+  AWAITING_PICKUP: "#06B6D4",
+  CLAIMED: "#10B981",
+  REJECTED: "#EF4444",
+  EXPIRED: "#6B7280",
+  RESOLVED: "#14B8A6",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Menunggu Verifikasi",
+  VERIFIED: "Terverifikasi",
+  AWAITING_PICKUP: "Menunggu Diambil",
+  CLAIMED: "Selesai (Diklaim)",
+  REJECTED: "Ditolak",
+  EXPIRED: "Kedaluwarsa",
+  RESOLVED: "Selesai (Mandiri)",
 };
 
 export default function AdminDashboardCharts({
@@ -64,12 +76,13 @@ export default function AdminDashboardCharts({
                 animationDuration={1000}
               >
                 {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || "#EA580C"} />
+                  <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || "#6B7280"} />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 25px -5px rgba(234,88,12,0.1)" }}
                 itemStyle={{ color: "#1E293B", fontWeight: 600 }}
+                formatter={(value: any, name: any) => [value, STATUS_LABELS[name as string] || name]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -81,9 +94,9 @@ export default function AdminDashboardCharts({
         <div className="grid grid-cols-2 gap-y-3 mt-4">
           {statusData.map((d) => (
             <div key={d.name} className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full shadow-inner" style={{ background: STATUS_COLORS[d.name] || "#EA580C" }} />
+              <span className="w-3 h-3 rounded-full shadow-inner" style={{ background: STATUS_COLORS[d.name] || "#6B7280" }} />
               <span className="text-xs font-medium text-slate-600">
-                {d.name} <span className="text-slate-400 ml-1">({d.value})</span>
+                {STATUS_LABELS[d.name] || d.name} <span className="text-slate-400 ml-1">({d.value})</span>
               </span>
             </div>
           ))}

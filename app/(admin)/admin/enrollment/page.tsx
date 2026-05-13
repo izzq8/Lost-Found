@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
-import { KeyRound, ArrowLeft } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import EnrollmentClient from "./_components/enrollment-client";
 
 export const metadata = { title: "Enrollment Code — LostFound SMKFN" };
@@ -31,13 +31,6 @@ export default async function AdminEnrollmentPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href="/admin"
-        className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium"
-      >
-        <ArrowLeft size={16} /> Kembali ke Dashboard
-      </Link>
-
       <PageHero
         icon={KeyRound}
         title="Enrollment Code"

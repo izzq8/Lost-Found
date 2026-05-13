@@ -145,7 +145,7 @@ export async function searchUsersForProxy(query: string) {
         role: "USER",
         name: { contains: query, mode: "insensitive" },
       },
-      select: { id: true, name: true, jabatan: true },
+      select: { id: true, name: true, email: true, jabatan: true },
       take: 10,
       orderBy: { name: "asc" },
     });

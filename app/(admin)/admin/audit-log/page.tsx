@@ -34,13 +34,6 @@ export default async function AuditLogPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href="/admin"
-        className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium"
-      >
-        ← Kembali ke Dashboard
-      </Link>
-
       <PageHero
         variant="default"
         icon={Activity}

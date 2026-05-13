@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
-import { ClipboardList, ArrowLeft, UserCheck } from "lucide-react";
+import { ClipboardList, UserCheck } from "lucide-react";
 import AdminClaimsClient from "./_components/admin-claims-client";
 
 export const metadata = { title: "Manajemen Klaim — LostFound SMKFN" };
@@ -41,10 +41,6 @@ export default async function AdminClaimsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin" className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium">
-        <ArrowLeft size={16} /> Kembali ke Dashboard
-      </Link>
-
       <PageHero
         icon={ClipboardList}
         title="Manajemen Klaim"
@@ -53,7 +49,7 @@ export default async function AdminClaimsPage() {
       >
         <Link
           href="/admin/claims/manual"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold hover:bg-white/30 transition-colors border border-white/20"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-colors shadow-lg"
         >
           <UserCheck size={15} /> Klaim Manual
         </Link>

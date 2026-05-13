@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/utils/auth-guard";
 import { prisma } from "@/lib/prisma/client";
 import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
-import { SearchCheck, ArrowLeft } from "lucide-react";
+import { SearchCheck } from "lucide-react";
 import AdminFoundMatchesClient from "./_components/admin-found-matches-client";
 
 export const metadata = { title: "Manajemen Found Match — LostFound SMKFN" };
@@ -46,10 +46,6 @@ export default async function AdminFoundMatchesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin" className="flex items-center gap-1 text-orange-600 hover:underline w-fit text-sm font-medium">
-        <ArrowLeft size={16} /> Kembali ke Dashboard
-      </Link>
-
       <PageHero
         icon={SearchCheck}
         title="Manajemen Found Match"

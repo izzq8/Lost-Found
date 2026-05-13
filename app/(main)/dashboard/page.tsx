@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     }),
     // 3. Recent reports
     prisma.report.findMany({
-      where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
+      where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP"] } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: {
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
       }
     }),
     prisma.report.findMany({
-      where: { type: "FOUND", status: { in: ["VERIFIED", "AWAITING_PICKUP", "CLAIMED"] } },
+      where: { type: "FOUND", status: { in: ["VERIFIED", "AWAITING_PICKUP"] } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { category: true }
