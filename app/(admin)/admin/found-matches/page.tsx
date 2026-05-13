@@ -1,48 +1,24 @@
 import { requireAdmin } from "@/lib/utils/auth-guard";
-import { prisma } from "@/lib/prisma/client";
-import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
 import { SearchCheck } from "lucide-react";
 import AdminFoundMatchesClient from "./_components/admin-found-matches-client";
+import { getAdminFoundMatchesList } from "@/lib/queries/admin-list.query";
 
-export const metadata = { title: "Manajemen Found Match — LostFound SMKFN" };
+export const metadata = { title: "Manajemen Found Match - LostFound SMKFN" };
 
-export default async function AdminFoundMatchesPage() {
+export default async function AdminFoundMatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    status?: string;
+    category?: string;
+  }>;
+}) {
   await requireAdmin();
-
-  const matches = await prisma.foundMatch.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      finder: { select: { name: true, jabatan: true } },
-      report: {
-        select: {
-          itemName: true,
-          type: true,
-          reporter: { select: { name: true } },
-          category: { select: { name: true, imageUrl: true } },
-          images: { take: 1, select: { url: true } },
-        },
-      },
-      images: { take: 1, select: { url: true } },
-    },
-  });
-
-  const serialized = matches.map((m) => ({
-    id: m.id,
-    status: m.status as string,
-    finderName: m.finder.name,
-    finderJabatan: m.finder.jabatan as string,
-    itemName: m.report.itemName,
-    ownerName: m.report.reporter.name,
-    category: m.report.category.name,
-    reportImageUrl: m.report.images.length > 0 ? m.report.images[0].url : null,
-    matchImageUrl: m.images.length > 0 ? m.images[0].url : null,
-    categoryImageUrl: m.report.category.imageUrl,
-    description: m.description.length > 80 ? m.description.slice(0, 80) + "…" : m.description,
-    createdAt: m.createdAt.toISOString(),
-  }));
-
-  const pendingCount = matches.filter((m) => m.status === "PENDING").length;
+  const params = await searchParams;
+  const result = await getAdminFoundMatchesList(params);
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,10 +26,16 @@ export default async function AdminFoundMatchesPage() {
         icon={SearchCheck}
         title="Manajemen Found Match"
         subtitle="Tinjau laporan penemuan barang hilang dari pengguna"
-        badge={`${pendingCount} menunggu`}
+        badge={`${result.counts.PENDING ?? 0} menunggu`}
       />
 
-      <AdminFoundMatchesClient matches={serialized} pendingCount={pendingCount} />
+      <AdminFoundMatchesClient
+        matches={result.items}
+        counts={result.counts}
+        categories={result.categories}
+        filters={result.filters}
+        pagination={result.pagination}
+      />
     </div>
   );
 }

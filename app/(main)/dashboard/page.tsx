@@ -8,13 +8,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default async function DashboardPage() {
-  const { user } = await requireAuth();
-
-  const profile = await prisma.profile.findUnique({
-    where: { id: user.id },
-  });
-
-  if (!profile) return null;
+  const { user, profile } = await requireAuth();
+  const now = new Date();
 
   // Parallel data fetching — all queries are independent
   const [
@@ -28,13 +23,14 @@ export default async function DashboardPage() {
     // 1. Pengumuman aktif terbaru
     prisma.announcement.findFirst({
       where: {
-        publishAt: { lte: new Date() },
+        publishAt: { lte: now },
         OR: [
-          { expiredAt: { gt: new Date() } },
+          { expiredAt: { gt: now } },
           { expiredAt: new Date("2099-12-31") }
         ]
       },
-      orderBy: { publishAt: "desc" }
+      orderBy: { publishAt: "desc" },
+      select: { title: true, content: true },
     }),
     // 2. Statistik
     prisma.report.count({
@@ -53,16 +49,30 @@ export default async function DashboardPage() {
       where: { type: "LOST", status: { in: ["VERIFIED", "AWAITING_PICKUP"] } },
       orderBy: { createdAt: "desc" },
       take: 4,
-      include: {
-        category: true,
-        images: { take: 1, orderBy: { createdAt: "asc" } },
-      }
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        itemName: true,
+        location: true,
+        date: true,
+        category: { select: { name: true, imageUrl: true } },
+        images: { take: 1, orderBy: { createdAt: "asc" }, select: { url: true } },
+      },
     }),
     prisma.report.findMany({
       where: { type: "FOUND", status: { in: ["VERIFIED", "AWAITING_PICKUP"] } },
       orderBy: { createdAt: "desc" },
       take: 4,
-      include: { category: true }
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        itemName: true,
+        location: true,
+        date: true,
+        category: { select: { name: true, imageUrl: true } },
+      },
     }),
   ]);
 
