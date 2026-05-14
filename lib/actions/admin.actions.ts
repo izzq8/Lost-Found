@@ -79,77 +79,6 @@ export async function createAdminAccount(formData: FormData): Promise<{ success:
   }
 }
 
-// ── PROCESS PASSWORD RESET ────────────────────────────────────────────────────
-
-export async function processPasswordReset(
-  requestId: string
-): Promise<{ success: boolean; error?: string; newPassword?: string }> {
-  try {
-    const { user, profile: adminProfile } = await requireAdmin();
-
-    const req = await prisma.passwordResetRequest.findUnique({
-      where: { id: requestId },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
-
-    if (!req) return { success: false, error: "Request tidak ditemukan." };
-    if (req.status === "PROCESSED") return { success: false, error: "Request sudah diproses." };
-
-    // Generate random password
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#";
-    let newPassword = "SmkFn";
-    for (let i = 0; i < 8; i++) {
-      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    newPassword += "!";
-
-    // Update password in Supabase Auth
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, {
-      password: newPassword,
-    });
-
-    if (authError) {
-      return { success: false, error: `Gagal mengubah password: ${authError.message}` };
-    }
-
-    // Update request status
-    await prisma.$transaction(async (tx) => {
-      await tx.passwordResetRequest.update({
-        where: { id: requestId },
-        data: {
-          status: "PROCESSED",
-          processedBy: user.id,
-          processedAt: new Date(),
-        },
-      });
-
-      await tx.notification.create({
-        data: {
-          userId: req.user.id,
-          type: "PASSWORD_RESET",
-          message: `Password Anda telah direset oleh admin. Silakan hubungi admin untuk mendapatkan password baru.`,
-          data: {},
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          action: "PASSWORD_RESET",
-          actorId: user.id,
-          targetType: "User",
-          targetId: req.user.id,
-          detail: `Admin '${adminProfile.name}' mereset password user '${req.user.name}'.`,
-        },
-      });
-    });
-
-    return { success: true, newPassword };
-  } catch (err: any) {
-    console.error("processPasswordReset error:", err);
-    return { success: false, error: "Gagal mereset password." };
-  }
-}
-
 // ── CATEGORY IMAGE UPLOAD HELPER ──────────────────────────────────────────────
 
 const ALLOWED_CATEGORY_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -725,7 +654,6 @@ export async function adminDeleteUser(
     await prisma.$transaction(async (tx) => {
       await tx.comment.deleteMany({ where: { authorId: userId } });
       await tx.notification.deleteMany({ where: { userId } });
-      await tx.passwordResetRequest.deleteMany({ where: { userId } });
       await tx.foundMatchImage.deleteMany({ where: { foundMatch: { finderId: userId } } });
       await tx.foundMatch.deleteMany({ where: { finderId: userId } });
       await tx.claimImage.deleteMany({ where: { claim: { claimantId: userId } } });

@@ -13,7 +13,6 @@ import type {
   EnrollmentCode,
   ReportImage,
   ClaimImage,
-  PasswordResetRequest,
 } from "@prisma/client";
 
 // Re-export Prisma types untuk kemudahan import
@@ -29,7 +28,6 @@ export type {
   EnrollmentCode,
   ReportImage,
   ClaimImage,
-  PasswordResetRequest,
 };
 
 // === Extended Types (dengan relasi) ===

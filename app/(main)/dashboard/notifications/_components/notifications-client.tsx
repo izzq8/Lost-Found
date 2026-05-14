@@ -8,7 +8,7 @@ import {
 } from "@/lib/actions/notification.actions";
 import { getNotificationHref } from "@/lib/utils/notification-href";
 import {
-  Bell, CheckCheck, FileText, AlertTriangle, MessageSquare, Shield, Clock,
+  Bell, CheckCheck, FileText, AlertTriangle, MessageSquare, Clock,
   Megaphone, ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
@@ -32,7 +32,6 @@ const TYPE_ICON: Record<string, typeof Bell> = {
   CLAIM_REJECTED: AlertTriangle,
   CLAIM_COMPLETED: CheckCheck,
   NEW_COMMENT: MessageSquare,
-  PASSWORD_RESET_PROCESSED: Shield,
   ANNOUNCEMENT_NEW: Megaphone,
 };
 
@@ -46,7 +45,6 @@ const TYPE_COLOR: Record<string, string> = {
   CLAIM_REJECTED: "text-red-500 bg-red-50",
   CLAIM_COMPLETED: "text-green-600 bg-green-50",
   NEW_COMMENT: "text-orange-600 bg-orange-50",
-  PASSWORD_RESET_PROCESSED: "text-purple-600 bg-purple-50",
   ANNOUNCEMENT_NEW: "text-orange-600 bg-orange-50",
 };
 

@@ -1,6 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/prisma/client";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  RECOVERY_SUCCESS_MESSAGE,
+  buildRecoveryRedirectUrl,
+  normalizeRecoveryEmail,
+} from "@/lib/auth/password-recovery";
 import { z } from "zod";
 
 const forgotPasswordSchema = z.object({
@@ -13,6 +19,7 @@ export type ForgotPasswordState = {
     email?: string[];
   };
   success?: boolean;
+  message?: string;
 };
 
 export async function forgotPasswordAction(
@@ -28,51 +35,42 @@ export async function forgotPasswordAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { email } = parsed.data;
+  const email = normalizeRecoveryEmail(parsed.data.email);
 
   try {
-    // 1. Check if user exists
-    const user = await prisma.profile.findFirst({
-      where: { email },
-    });
-
-    if (!user) {
-      // Kita kembalikan error spesifik karena aplikasi internal sekolah 
-      // (lebih baik transparan agar user sadar mereka belum terdaftar)
-      return { error: "Email belum terdaftar di sistem kami." };
-    }
-
-    // 2. Cek apakah ada request PENDING yang masih terbuka
-    const existingRequest = await prisma.passwordResetRequest.findFirst({
-       where: {
-         userId: user.id,
-         status: "PENDING"
-       }
-    });
-
-    if (existingRequest) {
-       return { error: "Permintaan reset untuk email ini sedang diproses. Silakan hubungi admin sekolah." };
-    }
-
-    // 3. Create Password Reset Request
-    await prisma.passwordResetRequest.create({
-      data: {
-        userId: user.id,
-        status: "PENDING",
+    const profile = await prisma.profile.findFirst({
+      where: {
+        email: { equals: email, mode: "insensitive" },
+        status: "ACTIVE",
       },
     });
 
-    // 4. Audit Log
+    if (!profile) {
+      return { success: true, message: RECOVERY_SUCCESS_MESSAGE };
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+      redirectTo: buildRecoveryRedirectUrl(appUrl),
+    });
+
+    if (error) {
+      console.error("[Forgot Password Supabase Error]", error.message);
+      return { error: "Link reset password belum dapat dikirim. Silakan coba lagi nanti." };
+    }
+
     await prisma.auditLog.create({
       data: {
-        action: "PASSWORD_RESET_REQUESTED",
-        actorId: user.id,
-        targetType: "PasswordResetRequest",
-        detail: `User ${email} meminta reset password manual via login page.`,
+        action: "PASSWORD_RESET_EMAIL_REQUESTED",
+        actorId: profile.id,
+        targetType: "User",
+        targetId: profile.id,
+        detail: `User '${profile.name}' meminta link reset password via email.`,
       },
     });
 
-    return { success: true };
+    return { success: true, message: RECOVERY_SUCCESS_MESSAGE };
   } catch (err) {
     console.error("[Forgot Password Error]", err);
     return { error: "Terjadi kesalahan server saat memproses permintaan." };

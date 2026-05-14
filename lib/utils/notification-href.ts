@@ -36,10 +36,6 @@ export function getNotificationHref(
         if (reportId) return `/admin/reports/${reportId}`;
         return null;
 
-      // Password reset
-      case "PASSWORD_RESET":
-        return "/admin/password-requests";
-
       default:
         return null;
     }
@@ -76,11 +72,6 @@ export function getNotificationHref(
     case "NEW_COMMENT":
       if (claimId) return "/dashboard/my-claims";
       if (reportId) return "/dashboard/my-reports";
-      return null;
-
-    // Password reset processed
-    case "PASSWORD_RESET":
-    case "PASSWORD_RESET_PROCESSED":
       return null;
 
     default:
