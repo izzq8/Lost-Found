@@ -62,6 +62,7 @@ export interface AdminListFilters {
   status?: string;
   category?: string;
   type?: string;
+  action?: string;
   role?: string;
   jabatan?: string;
   pageSize?: number;
@@ -113,6 +114,17 @@ export interface AdminFoundMatchListItem {
   createdAt: string;
 }
 
+export interface AdminAuditLogListItem {
+  id: string;
+  action: string;
+  actorName: string;
+  actorJabatan: string | null;
+  targetType: string;
+  targetId: string | null;
+  detail: string;
+  createdAt: string;
+}
+
 export interface AdminUserListItem {
   id: string;
   name: string;
@@ -144,9 +156,87 @@ export interface AdminFoundMatchesResult
   filters: { q: string; status: string; categories: string[] };
 }
 
+export interface AdminAuditLogsResult
+  extends PaginatedResult<AdminAuditLogListItem> {
+  actions: { action: string; count: number }[];
+  filters: { q: string; actions: string[] };
+}
+
 export interface AdminUsersResult extends PaginatedResult<AdminUserListItem> {
   counts: { active: number; inactive: number };
   filters: { q: string; status: string; role: string; jabatan: string };
+}
+
+export async function getAdminAuditLogsList({
+  page,
+  q,
+  action,
+  pageSize = ADMIN_LIST_PAGE_SIZE,
+}: AdminListFilters): Promise<AdminAuditLogsResult> {
+  const currentPage = parsePage(page);
+  const search = (q ?? "").trim();
+  const selectedActions = parseCsv(action);
+
+  const baseWhere: Prisma.AuditLogWhereInput = search
+    ? {
+        OR: [
+          { detail: { contains: search, mode: "insensitive" } },
+          { action: { contains: search, mode: "insensitive" } },
+          { targetType: { contains: search, mode: "insensitive" } },
+          { actor: { is: { name: { contains: search, mode: "insensitive" } } } },
+        ],
+      }
+    : {};
+  const where: Prisma.AuditLogWhereInput = {
+    ...baseWhere,
+    ...(selectedActions.length > 0 ? { action: { in: selectedActions } } : {}),
+  };
+
+  const [totalItems, logs, actionGroups] = await Promise.all([
+    prisma.auditLog.count({ where }),
+    prisma.auditLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        action: true,
+        targetType: true,
+        targetId: true,
+        detail: true,
+        createdAt: true,
+        actor: { select: { name: true, jabatan: true } },
+      },
+    }),
+    prisma.auditLog.groupBy({
+      by: ["action"],
+      _count: { _all: true },
+      orderBy: { action: "asc" },
+    }),
+  ]);
+
+  return {
+    items: logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      actorName: log.actor?.name ?? "Sistem",
+      actorJabatan: log.actor?.jabatan ?? null,
+      targetType: log.targetType,
+      targetId: log.targetId,
+      detail: log.detail,
+      createdAt: log.createdAt.toISOString(),
+    })),
+    actions: actionGroups.map((group) => ({
+      action: group.action,
+      count: group._count._all,
+    })),
+    filters: {
+      q: search,
+      actions: selectedActions,
+    },
+    pagination: buildPaginationMeta({ page: currentPage, pageSize, totalItems }),
+  };
 }
 
 export async function getAdminFoundMatchesList({

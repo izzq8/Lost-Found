@@ -307,6 +307,7 @@ model AuditLog {
 
   @@index([action])
   @@index([createdAt])
+  @@index([action, createdAt])
   @@map("audit_logs")
 }
 
