@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 
 // Route yang tidak perlu auth
 const publicRoutes = ["/login", "/register", "/forgot-password"];
+const authCallbackRoutes = ["/auth/reset-password/callback"];
 // Route khusus admin
 const adminRoutes = ["/admin"];
 
@@ -35,6 +36,10 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (authCallbackRoutes.some((r) => pathname.startsWith(r))) {
+    return response;
+  }
 
   // 1. Public routes — redirect ke dashboard jika sudah login
   if (publicRoutes.some((r) => pathname.startsWith(r))) {

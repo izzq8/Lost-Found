@@ -10,12 +10,25 @@ import {
   Megaphone, Activity, Download, UserPlus, Menu, X, ChevronLeft,
   ChevronRight, Bell, LogOut, User, Search, ChevronDown, SearchCheck
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { markAllNotificationsAsRead, getRecentNotifications } from "@/lib/actions/notification.actions";
 import { getNotificationHref } from "@/lib/utils/notification-href";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
+type AdminMenuItem = {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  badge: number;
+};
+
+type AdminMenuGroup = {
+  label: string;
+  items: AdminMenuItem[];
+};
+
 // ── SIDEBAR MENU DEFINITION ──────────────────────────────────────────────────
-const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: number }) => [
+const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: number }): AdminMenuGroup[] => [
   {
     label: "Utama",
     items: [
@@ -39,7 +52,6 @@ const getMenuGroups = (badges: { reports: number; claims: number; foundMatch: nu
     label: "Pengguna",
     items: [
       { icon: Users, label: "Manajemen User", href: "/admin/users", badge: 0 },
-      { icon: KeyRound, label: "Request Reset Password", href: "/admin/password-requests", badge: 0 },
     ],
   },
   {
@@ -73,6 +85,89 @@ interface AdminLayoutClientProps {
   pendingFoundMatchCount: number;
 }
 
+function SidebarContent({
+  isMobile = false,
+  collapsed,
+  menuGroups,
+  isActive,
+  onNavigate,
+  onToggleCollapsed,
+}: {
+  isMobile?: boolean;
+  collapsed: boolean;
+  menuGroups: AdminMenuGroup[];
+  isActive: (href: string) => boolean;
+  onNavigate?: () => void;
+  onToggleCollapsed: () => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2.5 px-5 h-16 shrink-0 border-b border-slate-100">
+        <Image src="/logo.png" alt="LostFound SMKFN Logo" width={36} height={36} className="shrink-0" />
+        {(!collapsed || isMobile) && (
+          <span className="text-[15px] font-bold text-slate-800 whitespace-nowrap">
+            LostFound <span className="text-orange-500">SMKFN</span>
+          </span>
+        )}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {menuGroups.map((group) => (
+          <div key={group.label} className="mb-4">
+            {(!collapsed || isMobile) && (
+              <p className="px-3 mb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const active = isActive(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={collapsed && !isMobile ? item.label : undefined}
+                  onClick={onNavigate}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all group relative ${
+                    active
+                      ? "bg-orange-50 text-orange-600 font-semibold shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                  }`}
+                  style={{ fontSize: "13px" }}
+                >
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-orange-500 rounded-r-full" />
+                  )}
+                  <Icon size={18} className={`shrink-0 ${active ? "text-orange-500" : "text-slate-400 group-hover:text-slate-600"}`} />
+                  {(!collapsed || isMobile) && (
+                    <span className="flex-1 flex items-center justify-between">
+                      <span>{item.label}</span>
+                      {item.badge > 0 && (
+                        <span className="ml-auto w-5 h-5 flex items-center justify-center rounded-full bg-orange-500 text-white text-[10px] font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      {!isMobile && (
+        <button
+          onClick={onToggleCollapsed}
+          className="mx-3 mb-4 p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminLayoutClient({ children, currentUser, unreadCount, pendingReportsCount, pendingClaimsCount, pendingFoundMatchCount }: AdminLayoutClientProps) {
   const menuGroups = getMenuGroups({ reports: pendingReportsCount, claims: pendingClaimsCount, foundMatch: pendingFoundMatchCount });
   const pathname = usePathname();
@@ -85,10 +180,9 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifItems, setNotifItems] = useState<{ id: string; type: string; message: string; data: Record<string, string> | null; isRead: boolean; createdAt: string }[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [nowMs] = useState(() => Date.now());
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -132,7 +226,7 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
   };
 
   const timeAgo = (iso: string) => {
-    const diff = Date.now() - new Date(iso).getTime();
+    const diff = nowMs - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Baru saja';
     if (mins < 60) return `${mins} menit lalu`;
@@ -143,75 +237,6 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
     return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   };
 
-  // ── SIDEBAR CONTENT ──────────────────────────────────────────────────────
-  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 h-16 shrink-0 border-b border-slate-100">
-        <Image src="/logo.png" alt="LostFound SMKFN Logo" width={36} height={36} className="shrink-0" />
-        {(!collapsed || isMobile) && (
-          <span className="text-[15px] font-bold text-slate-800 whitespace-nowrap">
-            LostFound <span className="text-orange-500">SMKFN</span>
-          </span>
-        )}
-      </div>
-
-      {/* Menu */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        {menuGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            {(!collapsed || isMobile) && (
-              <p className="px-3 mb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                {group.label}
-              </p>
-            )}
-            {group.items.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={collapsed && !isMobile ? item.label : undefined}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all group relative ${
-                    active
-                      ? "bg-orange-50 text-orange-600 font-semibold shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                  }`}
-                  style={{ fontSize: "13px" }}
-                >
-                  {active && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-orange-500 rounded-r-full" />
-                  )}
-                  <item.icon size={18} className={`shrink-0 ${active ? "text-orange-500" : "text-slate-400 group-hover:text-slate-600"}`} />
-                  {(!collapsed || isMobile) && (
-                    <span className="flex-1 flex items-center justify-between">
-                      <span>{item.label}</span>
-                      {item.badge > 0 && (
-                        <span className="ml-auto w-5 h-5 flex items-center justify-center rounded-full bg-orange-500 text-white text-[10px] font-bold">
-                          {item.badge}
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* Collapse Toggle (desktop only) */}
-      {!isMobile && (
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="mx-3 mb-4 p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </button>
-      )}
-    </div>
-  );
-
   return (
     <div className="flex min-h-screen" style={{ background: "#F8FAFC", fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}>
       {/* ── DESKTOP SIDEBAR ─────────────────────────────────────────────────── */}
@@ -219,7 +244,12 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
         className="hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white border-r border-slate-100 z-40 transition-all duration-300"
         style={{ width: collapsed ? 72 : 260 }}
       >
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          menuGroups={menuGroups}
+          isActive={isActive}
+          onToggleCollapsed={() => setCollapsed((value) => !value)}
+        />
       </aside>
 
       {/* ── MOBILE SIDEBAR OVERLAY ──────────────────────────────────────────── */}
@@ -234,7 +264,14 @@ export default function AdminLayoutClient({ children, currentUser, unreadCount, 
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SidebarContent isMobile />
+              <SidebarContent
+                isMobile
+                collapsed={collapsed}
+                menuGroups={menuGroups}
+                isActive={isActive}
+                onNavigate={() => setMobileOpen(false)}
+                onToggleCollapsed={() => setCollapsed((value) => !value)}
+              />
             </div>
           </aside>
         </div>

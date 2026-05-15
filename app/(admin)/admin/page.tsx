@@ -4,9 +4,10 @@ import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
-  LayoutDashboard, Users, FileText, ClipboardList, KeyRound,
+  LayoutDashboard, Users, FileText, ClipboardList,
   CheckCircle, Activity, ArrowRight, AlertCircle, TrendingUp
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import AdminDashboardChartsLazy from "./_components/admin-dashboard-charts-lazy";
 export const metadata = { title: "Dashboard Admin — LostFound SMKFN" };
 
@@ -25,7 +26,6 @@ export default async function AdminDashboardPage() {
     totalActiveReports,
     pendingReports,
     pendingClaims,
-    pendingPwdReqs,
     recentReports,
     recentLogs,
     // For chart: reports by month (last 6 months)
@@ -38,7 +38,6 @@ export default async function AdminDashboardPage() {
     prisma.report.count({ where: { status: { notIn: ["EXPIRED", "REJECTED"] } } }),
     prisma.report.count({ where: { status: "PENDING" } }),
     prisma.claim.count({ where: { status: "PENDING" } }),
-    prisma.passwordResetRequest.count({ where: { status: "PENDING" } }),
     prisma.report.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -126,10 +125,9 @@ export default async function AdminDashboardPage() {
           <AlertCircle size={18} className="text-orange-500" />
           <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">Menunggu Tindakan</h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ActionCard icon={FileText} count={pendingReports} label="Laporan Menunggu Verifikasi" href="/admin/reports" />
           <ActionCard icon={ClipboardList} count={pendingClaims} label="Klaim Menunggu Review" href="/admin/claims" />
-          <ActionCard icon={KeyRound} count={pendingPwdReqs} label="Request Reset Password" href="/admin/password-requests" />
         </div>
       </div>
 
@@ -242,7 +240,7 @@ export default async function AdminDashboardPage() {
 
 // ── SUB-COMPONENTS ─────────────────────────────────────────────────────────────
 
-function StatCard({ icon: Icon, label, value, subtext }: { icon: any; label: string; value: string | number; subtext?: string }) {
+function StatCard({ icon: Icon, label, value, subtext }: { icon: LucideIcon; label: string; value: string | number; subtext?: string }) {
   return (
     <div className="relative overflow-hidden p-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-sm group hover:shadow-md transition-shadow">
       <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-orange-600/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
@@ -260,7 +258,7 @@ function StatCard({ icon: Icon, label, value, subtext }: { icon: any; label: str
   );
 }
 
-function ActionCard({ icon: Icon, count, label, href }: { icon: any; count: number; label: string; href: string }) {
+function ActionCard({ icon: Icon, count, label, href }: { icon: LucideIcon; count: number; label: string; href: string }) {
   const isActive = count > 0;
   return (
     <Link href={href} className="flex items-center justify-between p-4 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/60 hover:bg-orange-50/60 hover:border-orange-200/50 transition-all shadow-sm group">

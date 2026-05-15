@@ -1,36 +1,25 @@
 import { requireAdmin } from "@/lib/utils/auth-guard";
-import { prisma } from "@/lib/prisma/client";
 import { PageHero } from "@/components/shared/page-hero";
 import { Activity } from "lucide-react";
-import Link from "next/link";
 import AuditLogClient from "./_components/audit-log-client";
+import { getAdminAuditLogsList } from "@/lib/queries/admin-list.query";
 
 export const metadata = {
   title: "Audit Trail — LostFound SMKFN",
 };
 
-export default async function AuditLogPage() {
+export default async function AuditLogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    action?: string;
+  }>;
+}) {
   await requireAdmin();
-
-  const logs = await prisma.auditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: { actor: { select: { name: true, jabatan: true } } },
-  });
-
-  const serialized = logs.map((log) => ({
-    id: log.id,
-    action: log.action,
-    actorName: log.actor?.name || "Sistem",
-    actorJabatan: log.actor?.jabatan || null,
-    targetType: log.targetType,
-    targetId: log.targetId,
-    detail: log.detail,
-    createdAt: log.createdAt.toISOString(),
-  }));
-
-  // Get unique actions for filter dropdown
-  const uniqueActions = [...new Set(logs.map((l) => l.action))].sort();
+  const params = await searchParams;
+  const result = await getAdminAuditLogsList(params);
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,10 +28,16 @@ export default async function AuditLogPage() {
         icon={Activity}
         title="Audit Trail"
         subtitle="Log semua aktivitas penting dalam sistem"
-        badge={`${serialized.length} entri`}
+        badge={`${result.pagination.totalItems} entri`}
       />
 
-      <AuditLogClient logs={serialized} uniqueActions={uniqueActions} />
+      <AuditLogClient
+        key={`${result.filters.q}:${result.filters.actions.join(",")}:${result.pagination.page}`}
+        logs={result.items}
+        actions={result.actions}
+        filters={result.filters}
+        pagination={result.pagination}
+      />
     </div>
   );
 }

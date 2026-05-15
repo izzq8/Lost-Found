@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import { forgotPasswordAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,6 @@ import Link from "next/link";
 
 export default function ForgotPasswordForm() {
   const [state, formAction, isPending] = useActionState(forgotPasswordAction, {});
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (state?.success) {
     return (
@@ -23,9 +18,9 @@ export default function ForgotPasswordForm() {
         <div className="bg-green-100 p-3 rounded-full mb-2">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
-        <h3 className="text-xl font-bold text-slate-800">Permintaan Terkirim</h3>
+        <h3 className="text-xl font-bold text-slate-800">Cek Email Anda</h3>
         <p className="text-slate-600 text-sm">
-          Permintaan reset password telah dicatat di sistem. Admin Tata Usaha akan segera mengatur ulang password Anda secara manual.
+          {state.message || "Jika email terdaftar dan akun aktif, link reset password telah dikirim."}
         </p>
         <Link 
             href="/login" 
@@ -68,7 +63,7 @@ export default function ForgotPasswordForm() {
 
       <Button
         type="submit"
-        disabled={isPending || !mounted}
+        disabled={isPending}
         className="w-full h-11 mt-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg shadow-orange-500/20 transition-all font-semibold text-base"
       >
         {isPending ? (
@@ -77,7 +72,7 @@ export default function ForgotPasswordForm() {
             Memproses...
           </>
         ) : (
-          "Minta Reset Password"
+          "Kirim Link Reset"
         )}
       </Button>
       

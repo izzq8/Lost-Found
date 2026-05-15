@@ -20,7 +20,6 @@ async function main() {
   // Hapus dari child ke parent untuk menghindari foreign key constraint error
   await prisma.foundMatchImage.deleteMany();
   await prisma.foundMatch.deleteMany();
-  await prisma.passwordResetRequest.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.notification.deleteMany();

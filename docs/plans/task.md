@@ -23,3 +23,8 @@
 | 104 | Navigation snapshot and realtime invalidation | done | Performance 3 |
 | 105 | Image pipeline and render cost | done | Performance 4 |
 | 106 | Database indexes and admin dashboard bundle | done | Performance 5 |
+| 201 | Supabase email recovery helpers and forgot-password flow | done | Password Recovery |
+| 202 | Reset-password callback, form, and action | done | Password Recovery |
+| 203 | Remove manual admin password reset request workflow | done | Password Recovery |
+| 204 | Prisma schema cleanup for password reset requests | done | Password Recovery |
+| 205 | Planning and UML documentation update | done | Password Recovery |

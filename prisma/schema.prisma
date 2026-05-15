@@ -66,11 +66,6 @@ enum ClaimType {
   OFFLINE
 }
 
-enum PasswordResetStatus {
-  PENDING
-  PROCESSED
-}
-
 enum FoundMatchStatus {
   PENDING
   APPROVED
@@ -98,13 +93,11 @@ model Profile {
   claims                Claim[]
   comments              Comment[]
   notifications         Notification[]
-  passwordResetRequests PasswordResetRequest[] @relation("PasswordRequester")
   auditLogs             AuditLog[]
 
   // Relasi sebagai admin / pembuat
   enrollmentCodesCreated  EnrollmentCode[]       @relation("EnrollmentCodeCreator")
   announcementsCreated    Announcement[]         @relation("AnnouncementCreator")
-  passwordResetsProcessed PasswordResetRequest[] @relation("PasswordResetProcessor")
   foundMatches            FoundMatch[]           @relation("FoundMatches")
 
   @@index([createdAt])
@@ -307,24 +300,8 @@ model AuditLog {
 
   @@index([action])
   @@index([createdAt])
+  @@index([action, createdAt])
   @@map("audit_logs")
-}
-
-// Request Reset Password
-model PasswordResetRequest {
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String              @map("user_id") @db.Uuid
-  status      PasswordResetStatus @default(PENDING)
-  processedBy String?             @map("processed_by") @db.Uuid
-  processedAt DateTime?           @map("processed_at")
-  createdAt   DateTime            @default(now()) @map("created_at")
-
-  user      Profile  @relation("PasswordRequester", fields: [userId], references: [id])
-  processor Profile? @relation("PasswordResetProcessor", fields: [processedBy], references: [id])
-
-  @@index([userId])
-  @@index([status])
-  @@map("password_reset_requests")
 }
 
 // Found Match (penemu melaporkan penemuan barang hilang user lain)

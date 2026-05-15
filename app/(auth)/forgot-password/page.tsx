@@ -4,7 +4,7 @@ import { ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Lupa Password",
-  description: "Ajukan permohonan reset password kepada Admin SMK Forward Nusantara",
+  description: "Kirim link reset password akun LostFound SMK Forward Nusantara",
 };
 
 export default function ForgotPasswordPage() {
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold text-slate-800">Lupa Password?</h2>
           <p className="text-slate-500 text-sm mt-2 px-2">
-            Masukkan email sekolah Anda yang terdaftar, kami akan mencatat permohonan reset untuk diproses oleh Tata Usaha.
+            Masukkan email sekolah Anda. Sistem akan mengirim link untuk membuat password baru jika akun aktif.
           </p>
         </div>
 
