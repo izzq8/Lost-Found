@@ -6,6 +6,7 @@ import {
   RECOVERY_SUCCESS_MESSAGE,
   buildRecoveryRedirectUrl,
   normalizeRecoveryEmail,
+  resolveRecoveryAppUrl,
 } from "@/lib/auth/password-recovery";
 import { z } from "zod";
 
@@ -50,7 +51,7 @@ export async function forgotPasswordAction(
     }
 
     const supabase = await createServerSupabaseClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = resolveRecoveryAppUrl();
     const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
       redirectTo: buildRecoveryRedirectUrl(appUrl),
     });

@@ -4,6 +4,7 @@ import {
   RECOVERY_SUCCESS_MESSAGE,
   buildRecoveryRedirectUrl,
   normalizeRecoveryEmail,
+  resolveRecoveryAppUrl,
   validateResetPasswordInput,
 } from "../../lib/auth/password-recovery";
 
@@ -16,6 +17,48 @@ describe("password recovery helpers", () => {
     assert.equal(
       buildRecoveryRedirectUrl("https://lostfound.example.com/"),
       "https://lostfound.example.com/auth/reset-password/callback"
+    );
+  });
+
+  it("resolves the configured production app URL without a trailing slash", () => {
+    assert.equal(
+      resolveRecoveryAppUrl({
+        NODE_ENV: "production",
+        NEXT_PUBLIC_APP_URL: "https://lostfound.example.com/",
+      }),
+      "https://lostfound.example.com"
+    );
+  });
+
+  it("uses the Vercel deployment URL with https when no app URL is configured", () => {
+    assert.equal(
+      resolveRecoveryAppUrl({
+        NODE_ENV: "production",
+        VERCEL_URL: "lostfound-smk.vercel.app",
+      }),
+      "https://lostfound-smk.vercel.app"
+    );
+  });
+
+  it("allows localhost only outside production", () => {
+    assert.equal(resolveRecoveryAppUrl({ NODE_ENV: "development" }), "http://localhost:3000");
+  });
+
+  it("rejects localhost recovery URLs in production", () => {
+    assert.throws(
+      () =>
+        resolveRecoveryAppUrl({
+          NODE_ENV: "production",
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+        }),
+      /Password recovery app URL must not be localhost in production/
+    );
+  });
+
+  it("requires a recovery app URL in production", () => {
+    assert.throws(
+      () => resolveRecoveryAppUrl({ NODE_ENV: "production" }),
+      /Password recovery app URL is not configured/
     );
   });
 

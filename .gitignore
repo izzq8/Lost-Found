@@ -20,6 +20,13 @@
 # production
 /build
 
+# local agent/worktree scratch
+/.agent/
+/.agents/
+/.worktrees/
+/worktrees/
+/docs/plans/*.local.md
+
 # misc
 .DS_Store
 *.pem
@@ -40,4 +47,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
